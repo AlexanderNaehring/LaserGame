@@ -1,0 +1,2 @@
+COMPONENT=targetMote
+include $(MAKERULES)
