@@ -2,7 +2,7 @@
 #define Message_H
 
 enum {
-  AM_ADC = 6
+  AM_Message = 6
 };
 
 typedef nx_struct Message {

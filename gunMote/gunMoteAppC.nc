@@ -1,8 +1,6 @@
-#include "ADC.h"
-#include "Msp430Adc12.h"
+#include "Radio-Message.h"
+// #include "Msp430Adc12.h"
 
-//#define NEW_PRINTF_SEMANTICS
-//#include "printf.h"
 
 configuration gunMoteAppC{}
 implementation {
@@ -11,35 +9,34 @@ implementation {
   components new TimerMilliC() as Timer;
   
   //components new SensirionSht11C() as TempRead;
-  components new AdcReadClientC() as Read;
+  // components new AdcReadClientC() as Read;
   
   
-  components SerialActiveMessageC;
-  components new SerialAMSenderC(AM_ADC);
-  components new SerialAMReceiverC(AM_ADC);
+  // components SerialActiveMessageC;
+  // components new SerialAMSenderC(AM_ADC);
+  // components new SerialAMReceiverC(AM_ADC);
   
   components ActiveMessageC;
-  components new AMSenderC(AM_ADC);
-  components new AMReceiverC(AM_ADC);
+  components new AMSenderC(AM_Message);
+  components new AMReceiverC(AM_Message);
+  components HplMsp430GeneralIOC as GIO;
+  components UserButtonC;
   
-  gunMoteC.AdcConfigure <- Read;
+  // gunMoteC.AdcConfigure <- Read;
   
   gunMoteC.Boot -> MainC;
   gunMoteC.Leds -> LedsC;
-  gunMoteC.TemperatureTimer -> Timer;
+  gunMoteC.Timer1 -> Timer;
   
-  gunMoteC.Read -> Read;
-  
-  gunMoteC.SerialPacket -> SerialAMSenderC;
-  gunMoteC.SerialAMPacket -> SerialAMSenderC;
-  gunMoteC.SerialAMControl -> SerialActiveMessageC;
-  gunMoteC.SerialAMSend -> SerialAMSenderC;
-  gunMoteC.SerialReceive -> SerialAMReceiverC;
+  // gunMoteC.Read -> Read;
   
   gunMoteC.Packet -> AMSenderC;
   gunMoteC.AMPacket -> AMSenderC;
   gunMoteC.AMControl -> ActiveMessageC;
   gunMoteC.AMSend -> AMSenderC;
   gunMoteC.Receive -> AMReceiverC;
+  gunMoteC.GIO -> GIO.Port23;
+
+  gunMoteC.Notify -> UserButtonC.Notify;
 }
 
