@@ -68,7 +68,7 @@ implementation  {
   event message_t* SerialReceive.receive(message_t* msg, void* payload, uint8_t len) {
     if (len == sizeof(Message)) {
       Message* msgPtr = (Message*)payload;
-        call Leds.led2Toggle();
+        call Leds.led2Toggle();     //for debugging
       if (!busy) {
         Message* msgPtr2 = 
 	      (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));

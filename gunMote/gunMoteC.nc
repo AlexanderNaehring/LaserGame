@@ -23,7 +23,7 @@ implementation  {
   message_t pkt;
   bool busy = FALSE;
   int counter = 0;
-  int gameStop = 0;
+  int MaxBullets = 0;
 
   event void Boot.booted() {
     call AMControl.start();
@@ -34,11 +34,11 @@ implementation  {
     if(val == BUTTON_PRESSED) {
       call GIO.makeOutput();
       counter++;
-      if (counter <= gameStop)
+      if (counter <= MaxBullets)
       {
         call GIO.set();
         call Timer1.startOneShot(500);
-        // Send this shot
+        // Sending this shot
         if (!busy) {
           Message* msgPtr = 
           (Message*)(call Packet.getPayload(&pkt, sizeof(Message)));
@@ -50,8 +50,8 @@ implementation  {
           if (call AMSend.send(AM_BROADCAST_ADDR, 
               &pkt, sizeof(Message)) == SUCCESS) {
             busy = TRUE;
-            call Leds.led1On();
-            call Leds.led0Off();
+            call Leds.led1On();     //start the shooting counter transmission
+            call Leds.led0Off();    //first shot triggered
           }
         }
       }
@@ -84,11 +84,12 @@ implementation  {
       // This is the "gun" mote
       if(msgPtr->identifier == 0) { //It should stop  
         call Timer1.stop();
+        MaxBullets = 0;   //clear the bullets
       } else  { 
         if (msgPtr->identifier == 1) {  //start the game with certain number of bullets
           // call Leds.led2Toggle();
-          gameStop = msgPtr->payload;
-          call Leds.led2Toggle();
+          MaxBullets = msgPtr->payload;
+          call Leds.led2Toggle();       //for debugging
           counter = 0;
         }
       }
