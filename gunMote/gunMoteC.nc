@@ -37,7 +37,7 @@ implementation  {
       if (counter <= MaxBullets)
       {
         call GIO.set();
-        call Timer1.startOneShot(500);
+        call Timer1.startOneShot(200);
         // Sending this shot
         if (!busy) {
           Message* msgPtr = 
