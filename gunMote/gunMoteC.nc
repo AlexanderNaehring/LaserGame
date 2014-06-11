@@ -1,7 +1,5 @@
 #include "Radio-Message.h"
-//#include "printf.h"
 #include <UserButton.h>
-#include "Msp430Adc12.h"
  
 module gunMoteC @safe()
 {
@@ -9,10 +7,6 @@ module gunMoteC @safe()
   uses interface Leds;
   
   uses interface Timer<TMilli> as Timer1;
-  //uses interface Read<uint16_t> as TempRead;
-  
-  // uses interface Read<uint16_t> as Read;
-  // provides interface AdcConfigure<const msp430adc12_channel_config_t*>;
   
   uses interface Packet;
   uses interface AMPacket;
@@ -92,7 +86,9 @@ implementation  {
         call Timer1.stop();
       } else  { 
         if (msgPtr->identifier == 1) {  //start the game with certain number of bullets
+          // call Leds.led2Toggle();
           gameStop = msgPtr->payload;
+          call Leds.led2Toggle();
           counter = 0;
         }
       }
