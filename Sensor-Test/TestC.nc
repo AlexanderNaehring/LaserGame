@@ -31,7 +31,7 @@ implementation
           if(tmp)
              call Timer1.startOneShot(1);
            else
-             call Timer1.startOneShot(2);
+             call Timer1.startOneShot(3);
       }else{
           call GIO.clr();
           call Timer1.startOneShot(40);
