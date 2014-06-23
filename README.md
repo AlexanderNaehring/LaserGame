@@ -16,6 +16,8 @@ A SMEAGOL project.
 	2. send msg with identifier == 1, payload == number of bullets __(init the gunMote, targetMotes initialized uniformly)__
     3. send msg with identifier == 2, ID == 1/2/3, payload = [movement_pattern] __(assign ID to the targetMote whose button is pressed, payload is its movement pattern)__ _
 
+>identifier:  0:stop,  1:start(with the number of bullets),  2: set target ID and movement pattern,  3:shooting,  4:hitting
+
 ----
 
 - Leds behavier:
