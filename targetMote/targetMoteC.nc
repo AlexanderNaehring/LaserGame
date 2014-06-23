@@ -26,31 +26,62 @@ implementation  {
   message_t pkt;
   bool busy = FALSE;
   bool shot = FALSE;
-  int counter = 0;
+  int gameMode = 0;          //0 for default mode, 1 for custom mode
+  int hitCounter = 0;          //hit counter
   int statusFlag = 0;       //1 for open, 0 for close;
-  int idFlag = 0;       //1 for ID assigned, 0 for ID is not assigned;
+  int moteID = FALSE;       //ID of the mote;
+  bool idWait = FALSE;       //T for Waiting for the ID;
   int tmp = 1;
 
   event void Boot.booted() {
     call Leds.led1On();
     call AMControl.start();
-    call LightTimer.startPeriodic(100);   //the timer for light sensor
-    call Notify.enable();
+    call LightTimer.startPeriodic(100);   //the frequency for light sensor
+    call Notify.enable();   //enable the button
 
-    call GIO.makeOutput();
+    call GIO.makeOutput();            //test the servo
           call GIO.set();
           call ServoTimer1.startOneShot(1);
           call GIO.set();
           call ServoTimer1.startOneShot(40);
           call GIO.set();
           call ServoTimer1.startOneShot(3);
-          call Leds.led2Toggle();
+  }
+
+  // Receiver OTA
+  event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) { 
+    if (len == sizeof(Message)) {
+      Message* msgPtr = (Message*)payload;
+      // This is the "gun" mote
+      if(msgPtr->identifier == 0) { //It should stop  
+        hitCounter = 0;
+        call LightTimer.stop();
+
+      // <-To be implemented->
+       // close the target;
+
+      }else if (msgPtr->identifier == 1){  //start the game
+
+          //defaut game mode if no id for targetMotes assigned.
+
+      }else if (msgPtr->identifier == 2){  //assign mote ID and Movement
+          if (idWait){
+            moteID = (int)msgPtr->moteID;   //assign mote ID
+            gameMode = 1;
+            idWait = FALSE;
+            call Leds.led2Off(); // assigned.
+
+            // <-  Movement pattern ->
+
+          }
+      }
+    }
+    return msg;
   }
   
-  event void Notify.notify(button_state_t val) {    // press the button
-
-    //if we could use it
-
+  event void Notify.notify(button_state_t val) {    // press the button to assign ID to the mote
+          call Leds.led2On();     //ready to be assigned
+          idWait = TRUE;
   }
 
   event void LightTimer.fired(){  //read from light sensor in a certain frequency
@@ -58,22 +89,34 @@ implementation  {
     
   }
 
-
+// It's a hit or not
   event void LightRead.readDone(error_t result, uint16_t val)  {
     if(result == SUCCESS) {
       if(val >= 1000) {       // Yeah, it is a hit!
-          shot = TRUE;
-          //close the target
-
-          // call LightTimer.stop();       
-          // call GIO.makeOutput();
-          // call GIO.set();
-          // call ServoTimer1.startOneShot(1);
-          // call GIO.set();
-          // call ServoTimer1.startOneShot(40);
-          // call GIO.set();
-          // call ServoTimer1.startOneShot(3);
-          // call Leds.led2Toggle();
+        shot = TRUE;
+        hitCounter++;
+        if (gameMode = 0){
+        //close the target
+          
+        }else if (gameMode = 1){
+          //sending this hit
+          if (!busy) {
+            Message* msgPtr = 
+            (Message*)(call Packet.getPayload(&pkt, sizeof(Message)));
+            if (msgPtr == NULL) {
+              return;
+            }
+            msgPtr->identifier = 4; // 4 = hiting event and counter
+            msgPtr->payload = hitCounter;
+            msgPtr->moteID = moteID;
+            if (call AMSend.send(AM_BROADCAST_ADDR, 
+                &pkt, sizeof(Message)) == SUCCESS) {
+              busy = TRUE;
+              call Leds.led1On();     //start the hit counter transmission
+              call Leds.led0Off();    //first hit triggered
+            }
+          }
+        }
       }         
     }
   }
@@ -82,7 +125,7 @@ implementation  {
       call GIO.clr();
   }
 
-  event void ServoTimer2.fired() {
+  event void ServoTimer2.fired() {    //not used up to now
      tmp = (tmp==0);
   }
 
@@ -100,24 +143,6 @@ implementation  {
   }
 
 
-  // Receiver OTA
-  event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) { 
-    // if (len == sizeof(Message)) {
-    //   Message* msgPtr = (Message*)payload;
-    //   // This is the "gun" mote
-    //   if(msgPtr->identifier == 0) { //It should stop  
-    //    // call Timer1.stop();
-    //   } else  { 
-    //     if (msgPtr->identifier == 1) {  //start the game with certain number of bullets
-    //       // call Leds.led2Toggle();
-    //       MaxBullets = msgPtr->payload;
-    //       call Leds.led2Toggle();       //for debugging
-    //       counter = 0;
-    //     }
-    //   }
-    // }
-    return msg;
-  }
   
   event void AMSend.sendDone(message_t* msg, error_t err) {
     if (&pkt == msg) {
