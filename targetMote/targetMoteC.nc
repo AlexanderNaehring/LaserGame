@@ -26,11 +26,11 @@ implementation  {
   message_t pkt;
   bool busy = FALSE;
   bool shot = FALSE;
-  int gameMode = 0;          //0 for default mode, 1 for custom mode
-  int hitCounter = 0;          //hit counter
-  int statusFlag = 0;       //1 for open, 0 for close;
-  int moteID = FALSE;       //ID of the mote;
-  bool idWait = FALSE;       //T for Waiting for the ID;
+  int game_mode = 0;          //0 for default mode, 1 for custom mode
+  int hit_counter = 0;          //hit counter
+  int status_flag = 0;       //1 for open, 0 for close;
+  int mote_id = FALSE;       //ID of the mote;
+  bool id_wait = FALSE;       //T for Waiting for the ID;
   int tmp = 1;
 
   event void Boot.booted() {
@@ -54,7 +54,7 @@ implementation  {
       Message* msgPtr = (Message*)payload;
       // This is the "gun" mote
       if(msgPtr->identifier == 0) { //It should stop  
-        hitCounter = 0;
+        hit_counter = 0;
         call LightTimer.stop();
 
       // <-To be implemented->
@@ -65,10 +65,10 @@ implementation  {
           //defaut game mode if no id for targetMotes assigned.
 
       }else if (msgPtr->identifier == 2){  //assign mote ID and Movement
-          if (idWait){
-            moteID = (int)msgPtr->moteID;   //assign mote ID
-            gameMode = 1;
-            idWait = FALSE;
+          if (id_wait){
+            mote_id = (int)msgPtr->mote_id;   //assign mote ID
+            game_mode = 1;
+            id_wait = FALSE;
             call Leds.led2Off(); // assigned.
 
             // <-  Movement pattern ->
@@ -81,7 +81,7 @@ implementation  {
   
   event void Notify.notify(button_state_t val) {    // press the button to assign ID to the mote
           call Leds.led2On();     //ready to be assigned
-          idWait = TRUE;
+          id_wait = TRUE;
   }
 
   event void LightTimer.fired(){  //read from light sensor in a certain frequency
@@ -94,11 +94,11 @@ implementation  {
     if(result == SUCCESS) {
       if(val >= 1000) {       // Yeah, it is a hit!
         shot = TRUE;
-        hitCounter++;
-        if (gameMode = 0){
+        hit_counter++;
+        if (game_mode = 0){
         //close the target
           
-        }else if (gameMode = 1){
+        }else if (game_mode = 1){
           //sending this hit
           if (!busy) {
             Message* msgPtr = 
@@ -107,8 +107,8 @@ implementation  {
               return;
             }
             msgPtr->identifier = 4; // 4 = hiting event and counter
-            msgPtr->payload = hitCounter;
-            msgPtr->moteID = moteID;
+            msgPtr->payload = hit_counter;
+            msgPtr->mote_id = mote_id;
             if (call AMSend.send(AM_BROADCAST_ADDR, 
                 &pkt, sizeof(Message)) == SUCCESS) {
               busy = TRUE;

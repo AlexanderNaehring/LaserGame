@@ -23,3 +23,4 @@ A SMEAGOL project.
 - Leds behavier:
 	- led0: ON when booted, OFF when first shot/hit accomplished.
 	- led1: ON when start to send msg, OFF when sending is done.
+	- led3: ON when press the button on targetMote(assign ID), OFF when ID is assigned.

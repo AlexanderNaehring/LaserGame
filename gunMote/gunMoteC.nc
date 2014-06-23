@@ -23,7 +23,7 @@ implementation  {
   message_t pkt;
   bool busy = FALSE;
   int counter = 0;
-  int MaxBullets = 0;
+  int max_bullets = 0;
 
   event void Boot.booted() {
     call AMControl.start();
@@ -34,7 +34,7 @@ implementation  {
     if(val == BUTTON_PRESSED) {
       call GIO.makeOutput();
       counter++;
-      if (counter <= MaxBullets)
+      if (counter <= max_bullets)
       {
         call GIO.set();
         call Timer1.startOneShot(200);
@@ -84,11 +84,11 @@ implementation  {
       // This is the "gun" mote
       if(msgPtr->identifier == 0) { //It should stop  
         call Timer1.stop();
-        MaxBullets = 0;   //clear the bullets
+        max_bullets = 0;   //clear the bullets
       } else  { 
         if (msgPtr->identifier == 1) {  //start the game with certain number of bullets
           // call Leds.led2Toggle();
-          MaxBullets = msgPtr->payload;
+          max_bullets = msgPtr->payload;
           call Leds.led2Toggle();       //for debugging
           counter = 0;
         }

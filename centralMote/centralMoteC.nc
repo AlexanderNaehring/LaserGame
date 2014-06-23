@@ -20,7 +20,6 @@ module centralMoteC @safe()
   uses interface SplitControl as AMControl;
   uses interface Receive;
   
-  uses interface Read<uint16_t> as LightRead;
   
   uses interface Packet as SerialPacket;
   uses interface AMPacket as SerialAMPacket;
@@ -33,7 +32,7 @@ module centralMoteC @safe()
 implementation  {
   message_t pkt;
   bool busy = FALSE;
-  bool Serialbusy = FALSE;
+  bool serial_busy = FALSE;
   int counter = 0;
 
 
@@ -95,7 +94,7 @@ implementation  {
       Message* msgPtr = (Message*)payload;
       // This is frome the "gun" mote
       if(msgPtr->identifier == 3) { // 
-        if (!Serialbusy) {
+        if (!serial_busy) {
           Message* msgPtr2 =    //receive the trigger event and number of bullets left from the gumMote 
           (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
           if (msgPtr2 == NULL) {
@@ -105,7 +104,7 @@ implementation  {
           msgPtr2->payload = msgPtr->payload;
           if (call SerialAMSend.send(AM_BROADCAST_ADDR,   //send the payload(bullets) to the computer
               &pkt, sizeof(Message)) == SUCCESS) {
-            Serialbusy = TRUE;  // sending to SerialForwarder
+            serial_busy = TRUE;  // sending to SerialForwarder
             call Leds.led1On();
           }
         }
@@ -126,7 +125,7 @@ implementation  {
 
   event void SerialAMSend.sendDone(message_t* msg, error_t err) {
     if (&pkt == msg) {
-      Serialbusy = FALSE;
+      serial_busy = FALSE;
       call Leds.led0Off();
       call Leds.led1Off();
     }
