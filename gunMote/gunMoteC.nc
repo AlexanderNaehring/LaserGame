@@ -45,7 +45,7 @@ implementation  {
           if (msgPtr == NULL) {
             return;
           }
-          msgPtr->identifier = 2; // 2 = Shooting event and counter
+          msgPtr->identifier = 3; // 3 = Shooting event and counter
           msgPtr->payload = counter;
           if (call AMSend.send(AM_BROADCAST_ADDR, 
               &pkt, sizeof(Message)) == SUCCESS) {

@@ -27,7 +27,8 @@ implementation  {
   bool busy = FALSE;
   bool shot = FALSE;
   int counter = 0;
-  int flag = 1;       //1 for open, 0 for close;
+  int statusFlag = 0;       //1 for open, 0 for close;
+  int idFlag = 0;       //1 for ID assigned, 0 for ID is not assigned;
   int tmp = 1;
 
   event void Boot.booted() {

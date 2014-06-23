@@ -93,8 +93,8 @@ implementation  {
   event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) { 
     if (len == sizeof(Message)) {
       Message* msgPtr = (Message*)payload;
-      // This is the "gun" mote
-      if(msgPtr->identifier == 2) { // 
+      // This is frome the "gun" mote
+      if(msgPtr->identifier == 3) { // 
         if (!Serialbusy) {
           Message* msgPtr2 =    //receive the trigger event and number of bullets left from the gumMote 
           (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
@@ -109,7 +109,7 @@ implementation  {
             call Leds.led1On();
           }
         }
-      } else if(msgPtr->identifier == 3){ // Message from the targets, It is a hitting
+      } else if(msgPtr->identifier == 4){ // Message from the targets, It is a hitting
         // Forward the counter over SF (pc)
         
       }
