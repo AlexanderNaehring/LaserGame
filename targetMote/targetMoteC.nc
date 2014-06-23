@@ -52,7 +52,7 @@ implementation  {
 
   }
 
-  event void LightTimer.fired(){
+  event void LightTimer.fired(){  //read from light sensor in a certain frequency
       call LightRead.read();
     
   }
@@ -62,15 +62,17 @@ implementation  {
     if(result == SUCCESS) {
       if(val >= 1000) {       // Yeah, it is a hit!
           shot = TRUE;
-          call LightTimer.stop();       //close the target
-          call GIO.makeOutput();
-          call GIO.set();
-          call ServoTimer1.startOneShot(1);
-          call GIO.set();
-          call ServoTimer1.startOneShot(40);
-          call GIO.set();
-          call ServoTimer1.startOneShot(3);
-          call Leds.led2Toggle();
+          //close the target
+
+          // call LightTimer.stop();       
+          // call GIO.makeOutput();
+          // call GIO.set();
+          // call ServoTimer1.startOneShot(1);
+          // call GIO.set();
+          // call ServoTimer1.startOneShot(40);
+          // call GIO.set();
+          // call ServoTimer1.startOneShot(3);
+          // call Leds.led2Toggle();
       }         
     }
   }

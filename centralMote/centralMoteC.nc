@@ -20,6 +20,7 @@ module centralMoteC @safe()
   uses interface SplitControl as AMControl;
   uses interface Receive;
   
+  uses interface Read<uint16_t> as LightRead;
   
   uses interface Packet as SerialPacket;
   uses interface AMPacket as SerialAMPacket;
@@ -41,7 +42,7 @@ implementation  {
     call SerialAMControl.start();
   }
   
-  event void SerialAMControl.startDone(error_t err) {
+  event void SerialAMControl.startDone(error_t err) {   //start Serial AM
     if (err == SUCCESS) {
       call Leds.led0On();
       call AMControl.start();
@@ -50,7 +51,7 @@ implementation  {
     }
   }
   
-  event void AMControl.startDone(error_t err) {
+  event void AMControl.startDone(error_t err) {   // start AM
     if (err == SUCCESS) {
       call Leds.led0Off();
     } else {
@@ -70,19 +71,16 @@ implementation  {
       Message* msgPtr = (Message*)payload;
         call Leds.led2Toggle();     //for debugging
       if (!busy) {
-        Message* msgPtr2 = 
+        Message* msgPtr2 =          // get msg from PC
 	      (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
         if (msgPtr2 == NULL) {
 	        return;
         }
-        
-        msgPtr2->identifier = msgPtr->identifier;  
+        msgPtr2->identifier = msgPtr->identifier;      //set value to AM packet
         msgPtr2->payload = msgPtr->payload;
-
-        
-        if (call AMSend.send(AM_BROADCAST_ADDR, 
+        if (call AMSend.send(AM_BROADCAST_ADDR,       //forward msg from PC to other motes
             &pkt, sizeof(Message)) == SUCCESS) {
-          busy = TRUE;  // send of wireless
+          busy = TRUE;                                // sending wirelessly
           call Leds.led1On();
         }
       }
@@ -95,24 +93,23 @@ implementation  {
   event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) { 
     if (len == sizeof(Message)) {
       Message* msgPtr = (Message*)payload;
-
       // This is the "gun" mote
       if(msgPtr->identifier == 2) { // 
         if (!Serialbusy) {
-          Message* msgPtr2 = 
+          Message* msgPtr2 =    //receive the trigger event and number of bullets left from the gumMote 
           (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
           if (msgPtr2 == NULL) {
             return;
           }
           msgPtr2->identifier = msgPtr->identifier;  
           msgPtr2->payload = msgPtr->payload;
-          if (call SerialAMSend.send(AM_BROADCAST_ADDR,   //send the payload to the computer
+          if (call SerialAMSend.send(AM_BROADCAST_ADDR,   //send the payload(bullets) to the computer
               &pkt, sizeof(Message)) == SUCCESS) {
-            Serialbusy = TRUE;  // send on Serial
+            Serialbusy = TRUE;  // sending to SerialForwarder
             call Leds.led1On();
           }
         }
-      } else  { // Message from the targets,
+      } else if(msgPtr->identifier == 3){ // Message from the targets, It is a hitting
         // Forward the counter over SF (pc)
         
       }
@@ -126,6 +123,7 @@ implementation  {
       call Leds.led1Off();
     }
   }
+
   event void SerialAMSend.sendDone(message_t* msg, error_t err) {
     if (&pkt == msg) {
       Serialbusy = FALSE;
