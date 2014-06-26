@@ -6,7 +6,8 @@ configuration gunMoteAppC{}
 implementation {
   components MainC, LedsC, gunMoteC;
   components SerialStartC;
-  components new TimerMilliC() as Timer;
+  components new TimerMilliC() as Timer1;
+  components new TimerMilliC() as Timer2;
   
   //components new SensirionSht11C() as TempRead;
   // components new AdcReadClientC() as Read;
@@ -26,7 +27,8 @@ implementation {
   
   gunMoteC.Boot -> MainC;
   gunMoteC.Leds -> LedsC;
-  gunMoteC.Timer1 -> Timer;
+  gunMoteC.Timer1 -> Timer1;
+  gunMoteC.Timer2 -> Timer2;
   
   // gunMoteC.Read -> Read;
   
