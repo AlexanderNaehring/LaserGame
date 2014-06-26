@@ -7,8 +7,8 @@ module targetMoteC @safe()
   uses interface Leds;
   
   uses interface Timer<TMilli> as LightTimer;   //the frequency of light measuring
-  uses interface Timer<TMilli> as ServoTimer1;
-  uses interface Timer<TMilli> as ServoTimer2;
+  uses interface Timer<TMilli> as ServoTimer1;  // sending control bits to servo, always running
+  uses interface Timer<TMilli> as ServoTimer2;  // controlling intervals, only running if game runs
   
   uses interface Packet;
   uses interface AMPacket;
@@ -28,24 +28,21 @@ implementation  {
   bool shot = FALSE;
   int game_mode = 0;          //0 for default mode, 1 for custom mode
   int hit_counter = 0;          //hit counter
-  int status_flag = 0;       //1 for open, 0 for close;
+  bool status_flag = FALSE;       //1 for open, 0 for close;
   int mote_id = FALSE;       //ID of the mote;
   bool id_wait = FALSE;       //T for Waiting for the ID;
-  int tmp = 1;
+  int servoTimerFlag = 1;
+  int servoPosition = 2;
+  int targetOpenTime;
+  int targetClosedTime;
 
   event void Boot.booted() {
     call Leds.led1On();
     call AMControl.start();
     call LightTimer.startPeriodic(100);   //the frequency for light sensor
     call Notify.enable();   //enable the button
-
-    call GIO.makeOutput();            //test the servo
-          call GIO.set();
-          call ServoTimer1.startOneShot(1);
-          call GIO.set();
-          call ServoTimer1.startOneShot(40);
-          call GIO.set();
-          call ServoTimer1.startOneShot(3);
+    call ServoTimer1.startOneShot(1);
+    
   }
 
   // Receiver OTA
@@ -56,23 +53,30 @@ implementation  {
       if(msgPtr->identifier == 0) { //It should stop  
         hit_counter = 0;
         call LightTimer.stop();
+        status_flag = FALSE;  // stop the servotimers
 
-      // <-To be implemented->
-       // close the target;
+      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id){  //start the game and set Movement
 
-      }else if (msgPtr->identifier == 1){  //start the game
-
+        call GIO.makeOutput(); 
+        status_flag = TRUE;   
+        targetOpenTime = msgPtr->payload1*1000;       //read custom pattern
+        targetClosedTime = msgPtr->payload2*1000;   
+        if(targetOpenTime == 0)             // no payload, default pattern
+          targetOpenTime = 5000;
+        if(targetClosedTime == 0) 
+          targetClosedTime = 1000;
+        call ServoTimer2.startOneShot(1);    
           //defaut game mode if no id for targetMotes assigned.
 
-      }else if (msgPtr->identifier == 2){  //assign mote ID and Movement
+      }else if (msgPtr->identifier == 2){   //assign mote ID 
           if (id_wait){
             mote_id = (int)msgPtr->mote_id;   //assign mote ID
             game_mode = 1;
             id_wait = FALSE;
             call Leds.led2Off(); // assigned.
-
-            // <-  Movement pattern ->
-
+            call GIO.makeOutput();    // <-  Movement pattern ->
+            status_flag = FALSE;     
+            servoPosition = 2;
           }
       }
     }
@@ -95,10 +99,10 @@ implementation  {
       if(val >= 1000) {       // Yeah, it is a hit!
         shot = TRUE;
         hit_counter++;
-        if (game_mode = 0){
-        //close the target
+        // if (game_mode = 0){
+        // //close the target
           
-        }else if (game_mode = 1){
+        // }else if (game_mode = 1){
           //sending this hit
           if (!busy) {
             Message* msgPtr = 
@@ -107,7 +111,8 @@ implementation  {
               return;
             }
             msgPtr->identifier = 4; // 4 = hiting event and counter
-            msgPtr->payload = hit_counter;
+            msgPtr->payload2 = hit_counter;
+            msgPtr->payload1 = 0;
             msgPtr->mote_id = mote_id;
             if (call AMSend.send(AM_BROADCAST_ADDR, 
                 &pkt, sizeof(Message)) == SUCCESS) {
@@ -116,17 +121,35 @@ implementation  {
               call Leds.led0Off();    //first hit triggered
             }
           }
-        }
+        // }
       }         
     }
   }
 
   event void ServoTimer1.fired() {
+    if(servoTimerFlag) {
+      servoTimerFlag = 0;
       call GIO.clr();
+      call ServoTimer1.startOneShot(40);
+    } else {
+      servoTimerFlag = 1;
+      call GIO.set();
+      if (status_flag)
+        call ServoTimer1.startOneShot(servoPosition);
+      else 
+        call ServoTimer1.startOneShot(2);
+    }
   }
 
   event void ServoTimer2.fired() {    //not used up to now
-     tmp = (tmp==0);
+    if(status_flag)
+     if(servoPosition == 1) {
+        servoPosition = 2;
+        call ServoTimer2.startOneShot(targetClosedTime);
+     }  else  {
+        servoPosition = 1;
+        call ServoTimer2.startOneShot(targetOpenTime);
+     }
   }
 
 
