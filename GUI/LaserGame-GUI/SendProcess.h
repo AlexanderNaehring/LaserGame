@@ -1,0 +1,4 @@
+#ifndef SENDPROCESS_H
+#define SENDPROCESS_H
+
+#endif // SENDPROCESS_H
