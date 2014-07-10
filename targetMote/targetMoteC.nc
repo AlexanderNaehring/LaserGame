@@ -25,11 +25,10 @@ module targetMoteC @safe()
 implementation  {
   message_t pkt;
   bool busy = FALSE;
-  bool shot = FALSE;
   int game_mode = 0;          //0 for default mode, 1 for custom mode
-  int hit_counter = 0;          //hit counter
-  bool status_flag = FALSE;       //1 for open, 0 for close;
-  int mote_id = FALSE;       //ID of the mote;
+  int hit_counter = 0;        //hit counter
+  bool status_flag = FALSE;   //1 for open, 0 for close;
+  int mote_id = 0;            //ID of the mote;
   bool id_wait = FALSE;       //T for Waiting for the ID;
   int servoTimerFlag = 1;
   int servoPosition = 2;
@@ -39,7 +38,7 @@ implementation  {
   event void Boot.booted() {
     call Leds.led1On();
     call AMControl.start();
-    call LightTimer.startPeriodic(100);   //the frequency for light sensor
+    call LightTimer.startOneShot(100);
     call Notify.enable();   //enable the button
     call ServoTimer1.startOneShot(1);
     
@@ -52,15 +51,15 @@ implementation  {
       // This is the "gun" mote
       if(msgPtr->identifier == 0) { //It should stop  
         hit_counter = 0;
-        call LightTimer.stop();
+        //call LightTimer.stop();
         status_flag = FALSE;  // stop the servotimers
 
-      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id){  //start the game and set Movement
+      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id && mode_id != 0){  //start the game and set Movement
 
         call GIO.makeOutput(); 
         status_flag = TRUE;   
-        targetOpenTime = msgPtr->payload1*1000;       //read custom pattern
-        targetClosedTime = msgPtr->payload2*1000;   
+        targetOpenTime = msgPtr->payload1*1000;   // read custom pattern
+        targetClosedTime = msgPtr->payload2*1000; // time is 
         if(targetOpenTime == 0)             // no payload, default pattern
           targetOpenTime = 5000;
         if(targetClosedTime == 0) 
@@ -68,16 +67,16 @@ implementation  {
         call ServoTimer2.startOneShot(1);    
           //defaut game mode if no id for targetMotes assigned.
 
-      }else if (msgPtr->identifier == 2){   //assign mote ID 
-          if (id_wait){
-            mote_id = (int)msgPtr->mote_id;   //assign mote ID
-            game_mode = 1;
-            id_wait = FALSE;
-            call Leds.led2Off(); // assigned.
-            call GIO.makeOutput();    // <-  Movement pattern ->
-            status_flag = FALSE;     
-            servoPosition = 2;
-          }
+      } else if (msgPtr->identifier == 2){   //assign mote ID 
+        if (id_wait){
+          mote_id = (int)msgPtr->mote_id;   //assign mote ID
+          game_mode = 1;
+          id_wait = FALSE;
+          call Leds.led2Off(); // assigned.
+          call GIO.makeOutput();    // <-  Movement pattern ->
+          status_flag = FALSE;     
+          servoPosition = 2; // 2 means closed
+        }
       }
     }
     return msg;
@@ -96,33 +95,30 @@ implementation  {
 // It's a hit or not
   event void LightRead.readDone(error_t result, uint16_t val)  {
     if(result == SUCCESS) {
-      if(val >= 1000) {       // Yeah, it is a hit!
-        shot = TRUE;
+      if(val >= 600) {       // Yeah, it is a hit!
         hit_counter++;
-        // if (game_mode = 0){
-        // //close the target
-          
-        // }else if (game_mode = 1){
-          //sending this hit
-          if (!busy) {
-            Message* msgPtr = 
-            (Message*)(call Packet.getPayload(&pkt, sizeof(Message)));
-            if (msgPtr == NULL) {
-              return;
-            }
-            msgPtr->identifier = 4; // 4 = hiting event and counter
-            msgPtr->payload2 = hit_counter;
-            msgPtr->payload1 = 0;
-            msgPtr->mote_id = mote_id;
-            if (call AMSend.send(AM_BROADCAST_ADDR, 
-                &pkt, sizeof(Message)) == SUCCESS) {
-              busy = TRUE;
-              call Leds.led1On();     //start the hit counter transmission
-              call Leds.led0Off();    //first hit triggered
-            }
+        call LightTimer.startOneShot(750); // if there is a hit, wait a little bit longer
+        //sending this hit
+        if (!busy) {
+          Message* msgPtr = 
+          (Message*)(call Packet.getPayload(&pkt, sizeof(Message)));
+          if (msgPtr == NULL) {
+            return;
           }
-        // }
-      }         
+          msgPtr->identifier = 4; // 4 = hiting event and counter
+          msgPtr->payload2 = hit_counter;
+          msgPtr->payload1 = 0;
+          msgPtr->mote_id = mote_id;
+          if (call AMSend.send(AM_BROADCAST_ADDR, 
+              &pkt, sizeof(Message)) == SUCCESS) {
+            busy = TRUE;
+            call Leds.led1On();     //start the hit counter transmission
+            call Leds.led0Off();    //first hit triggered
+          }
+        }
+      } else { // no hit
+        call LightTimer.startOneShot(80); // no hit - check again after a short period
+      }
     }
   }
 
