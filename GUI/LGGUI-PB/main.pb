@@ -1,9 +1,6 @@
 ﻿; GUI for the Laser Game Project - SMEAGOL - INETS - RWTH AACHEN UNIVERSTIY
 ; (C) July 2014, Alexander Nähring
 ; 
-; known bugs:
-; Gun mote:
-;   - Laser stays on if game is stoped while laser is on
 
 EnableExplicit
 
