@@ -8,7 +8,6 @@
 EnableExplicit
 
 XIncludeFile "mainWindow.pbf"
-XIncludeFile "log.pbi"
 
 Global PrSF
 Global PrSFLISTEN
@@ -22,7 +21,16 @@ Debug dir$
 
 Global BulletsShot, BulletsMax
 Global TimeMax, TimeStart, TimeLeft
-Global MoteT1, MoteT2, MoteT3
+Global MoteT1, MoteT2, MoteT3, ReceivedMoteID
+
+InitSound()
+UseOGGSoundDecoder()
+Global SoundShot = LoadSound(#PB_Any, dir$+"gun.ogg")
+Global Dim SoundHit(4)
+Define i
+For i = 0 To 3
+SoundHit(i) = LoadSound(#PB_Any, dir$+"hit"+Str(i)+".ogg")
+Next
 
 Declare addLog(logEntry$)
 Declare close()
@@ -88,6 +96,15 @@ Procedure updateProgressBar() ; update graphical interface for remeaining bullet
   SetGadgetAttribute(GadgetProgressBarBullets, #PB_ProgressBar_Minimum, 0)
   SetGadgetAttribute(GadgetProgressBarBullets, #PB_ProgressBar_Maximum, BulletsMax)
   SetGadgetState(GadgetProgressBarBullets, BulletsMax-BulletsShot)
+  
+  If GameRunning
+     TimeLeft = TimeMax - (Date() - TimeStart)
+    SetGadgetAttribute(GadgetProgressBarTime, #PB_ProgressBar_Minimum, 0)
+    SetGadgetAttribute(GadgetProgressBarTime, #PB_ProgressBar_Maximum, TimeMax)
+    SetGadgetState(GadgetProgressBarTime, TimeLeft)
+  Else
+    SetGadgetState(GadgetProgressBarTime, 0)
+  EndIf
 EndProcedure
 
 Procedure sfsend(identifier, moteID, payload1, payload2)
@@ -135,6 +152,42 @@ Procedure sfsendBullets(bullets)
   ProcedureReturn sfsend(1, 0,  0, bullets)
 EndProcedure
 
+Procedure sfsendAssignID(moteID)
+  ProcedureReturn sfsend(2,moteID,0,0)  
+EndProcedure
+
+Procedure sfsendMovement(moteID, openTime, closeTime, randomize = #True)
+  If randomize
+    Debug opentime
+    openTime = openTime + -openTime/4+Random(openTime/2)
+    Debug openTime
+    closeTime = closeTime + -closeTime/4+Random(closeTime/2)
+  EndIf
+  If moteID < 1
+    moteID = 1
+  ElseIf moteID > 3
+    moteID = 3
+  EndIf 
+   
+  If openTime < 1
+    openTime = 1
+  EndIf
+  If closeTime < 1
+    closeTime = 1
+  EndIf
+  If openTime > 127
+    openTime = 127
+  EndIf
+  If closeTime > 127
+    closeTime = 127
+  EndIf
+  
+  sfsend(1,moteID,openTime,closeTime)
+EndProcedure
+
+
+
+
 Procedure sflistenHandleOutput(Output$) 
   Debug "sflisten: '" + Output$ + "'"
   Protected header$ = "00 ff ff ff 01 04 3f 06 "
@@ -154,21 +207,43 @@ Procedure sflistenHandleOutput(Output$)
     payload2 = Val("$" + Mid(Output$, 10, 2))
     ;Debug "(id, moteID, pay1, pay2) = ("+Str(identifier)+", "+Str(moteID)+", "+Str(payload1)+", "+Str(payload2)+")"
     
-    If identifier = 3
-      If moteID = 0
-        ; bullets: '03 00 00 count '
-        BulletsShot = payload2
-        addLog("gunmote released " + Str(BulletsShot) + "/" + Str(BulletsMax) + " bullets")
-        If BulletsShot >= BulletsMax 
-          BulletsShot = BulletsMax
-          stopGame()
+    Select identifier
+        
+      Case 3 ; shot
+        If moteID = 0 ; gun mote
+          If IsSound(SoundShot)
+            PlaySound(SoundShot)
+          EndIf
+          ; bullets: '03 00 00 count '
+          BulletsShot = payload2
+          addLog("gunmote released " + Str(BulletsShot) + "/" + Str(BulletsMax) + " bullets")
+          If BulletsShot >= BulletsMax 
+            BulletsShot = BulletsMax
+            stopGame()
+          EndIf
         EndIf
-      Else
+        
+      Case 4
         ; target mote telling hits
         ; Hits = payload2
-      EndIf
-    EndIf
-    
+        Protected Sound
+        Sound = SoundHit(Random(3))
+        If IsSound(sound)
+          PlaySound(sound)
+        EndIf
+        addLog("hit registered from mote "+Str(moteID))
+        
+      Case 5 ; Feedback for ID assignment
+        addLog("sflisten: received feedback from moteID "+Str(moteID))
+        Select moteID
+          Case 1
+              moteT1 = #True 
+          Case 2
+              moteT2 = #True 
+          Case 3
+              moteT3 = #True 
+          EndSelect
+      EndSelect
   Else
     ; no header found
     addLog("sflisten: unknown message: "+Output$)
@@ -183,8 +258,26 @@ Procedure startGame()
   EndIf
   addLog("starting a new game...")
   SetGadgetText(GadgetButtonToggleGame, "Stop Game")
-  sfsendBullets(32)
+  
+  Protected randomize
+  randomize = #False
+  
+  If MoteT1
+    sfsendMovement(1, Val(GetGadgetText(GadgetStringT1Open)), Val(GetGadgetText(GadgetStringT1Close)), randomize)
+  EndIf
+  If MoteT2
+    sfsendMovement(2, Val(GetGadgetText(GadgetStringT2Open)), Val(GetGadgetText(GadgetStringT2Close)), randomize)
+  EndIf
+  If MoteT3
+    sfsendMovement(3, Val(GetGadgetText(GadgetStringT3Open)), Val(GetGadgetText(GadgetStringT3Close)), randomize)
+  EndIf
+  
+  sfsendBullets(Val(GetGadgetText(GadgetSpinBullets)))
+  
+  
   GameRunning = #True
+  TimeStart = Date()
+  TimeMax = GetGadgetState(GadgetSpinTime)
   ProcedureReturn #True
 EndProcedure
 
@@ -209,15 +302,23 @@ Procedure toggleGame()
   EndIf
 EndProcedure
 
-Procedure registerTargetMote(*dummy)
-  Static busy
-  If Not busy
-    busy = #True
+Procedure registerTargetMote(moteID)
+    addLog("Register new mote with id "+Str(moteID))
     
-    addLog("registering new target mote...")
-    MessageRequester("Registering a new target mote", "Please press the user button on ONE target mote NOW!"+Chr(13)+"Afterwards, click OK", #PB_MessageRequester_Ok)
+    Select moteID
+      Case 1
+        MoteT1 = #False
+      Case 2 
+        MoteT2 = #False
+      Case 3
+        MoteT3 = #False
+    EndSelect
     
-  EndIf
+    ;MessageRequester("Registering a new target mote", "Please press the user button on ONE target mote NOW!"+Chr(13)+"Afterwards, click OK", #PB_MessageRequester_Ok)
+    ; assume that target mote is now waiting for ID
+    ; send ID to target mote
+        
+    sfsendAssignID(moteID)
 EndProcedure
 
 ;----------------------------
@@ -227,6 +328,12 @@ EndProcedure
 
 OpenWindowMain()
 addLog("Starting GUI...")
+SetGadgetState(GadgetSpinBullets, 16)
+SetGadgetState(GadgetSpinTime, 60)
+AddGadgetItem(GadgetComboDifficulty, -1, "easy")
+AddGadgetItem(GadgetComboDifficulty, -1, "normal")
+AddGadgetItem(GadgetComboDifficulty, -1, "hard")
+AddGadgetItem(GadgetComboDifficulty, -1, "custom")
 
 WaitInit = #True
 CreateThread(@init(),0)
@@ -236,8 +343,7 @@ HideWindow(WindowMain, #False)
 Global LastUpdate = 0
 
 Repeat ; main loop
-  Delay(1) ; don't hog CPU
-  Event = WindowEvent() ; check new events w/o waiting
+  Event = WaitWindowEvent(100) ; check new events w/o waiting
   
   If LastUpdate < ElapsedMilliseconds()-100 ; check gadgets etc every 100 ms
     LastUpdate = ElapsedMilliseconds()
@@ -292,12 +398,53 @@ Repeat ; main loop
       ;{ Gadgets
       updateProgressBar()
       
+      
+      Define last_MoteT1, last_MoteT2, last_MoteT3
+      
+      If Not MoteT1 = last_MoteT1
+        last_MoteT1 = MoteT1
+        If MoteT1
+          DisableGadget(GadgetStringT1Open, #False)
+          DisableGadget(GadgetStringT1Close, #False)
+        Else
+          DisableGadget(GadgetStringT1Open, #True)
+          DisableGadget(GadgetStringT1Close, #True)
+        EndIf 
+      EndIf
+      If Not MoteT2 = last_MoteT2
+        last_MoteT2 = MoteT2
+        If MoteT2
+          DisableGadget(GadgetStringT2Open, #False)
+          DisableGadget(GadgetStringT2Close, #False)
+        Else
+          DisableGadget(GadgetStringT2Open, #True)
+          DisableGadget(GadgetStringT2Close, #True)
+        EndIf 
+      EndIf
+      If Not MoteT3 = last_MoteT3
+        last_MoteT3 = MoteT3
+        If MoteT3
+          DisableGadget(GadgetStringT3Open, #False)
+          DisableGadget(GadgetStringT3Close, #False)
+        Else
+          DisableGadget(GadgetStringT3Open, #True)
+          DisableGadget(GadgetStringT3Close, #True)
+        EndIf 
+      EndIf
+            
       If MoteT1 Or MoteT2 Or MoteT3 ; at least one target has to be online in order to start a new game
         DisableGadget(GadgetButtonToggleGame, #False  )
+        DisableGadget(GadgetSpinBullets, #False)
+        DisableGadget(GadgetComboDifficulty, #False)
+        DisableGadget(GadgetSpinTime, #False)
+        
       Else
-        DisableGadget(GadgetButtonToggleGame, #False)
+        DisableGadget(GadgetButtonToggleGame, #True)
+        DisableGadget(GadgetSpinBullets, #True)
+        DisableGadget(GadgetComboDifficulty, #True)
+        DisableGadget(GadgetSpinTime, #True)
         If GameRunning
-          ;stopGame()
+          stopGame()
         EndIf
       EndIf
             
@@ -316,7 +463,13 @@ Repeat ; main loop
         Case GadgetButtonToggleGame
           toggleGame()
         Case GadgetButtonRegisterT
-          registerTargetMote(0)
+        Case GadgetButtonRegisterT1
+          registerTargetMote(1)
+        Case GadgetButtonRegisterT2
+          registerTargetMote(2)
+        Case GadgetButtonRegisterT3
+          registerTargetMote(3)
+          
       EndSelect
       
     Case #PB_Event_Menu
@@ -329,12 +482,12 @@ Repeat ; main loop
   
 ForEver
 ; IDE Options = PureBasic 5.11 (Linux - x86)
-; CursorPosition = 167
-; FirstLine = 79
-; Folding = Gu0
+; CursorPosition = 207
+; FirstLine = 127
+; Folding = O+3-
 ; EnableThread
 ; EnableXP
 ; Executable = LGGUI
-; EnableCompileCount = 88
-; EnableBuildCount = 1
+; EnableCompileCount = 151
+; EnableBuildCount = 2
 ; EnableExeConstant
