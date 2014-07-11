@@ -88,7 +88,7 @@ implementation  {
       if(msgPtr->identifier == 0) { //It should stop  
         max_bullets = 0;   //clear the bullets
       } else  { 
-        if (msgPtr->identifier == 1) {  //start the game with certain number of bullets
+        if (msgPtr->identifier == 1 && msgPtr->mote_id == 0) {  //start the game with certain number of bullets
           // call Leds.led2Toggle();
           max_bullets = msgPtr->payload;
           call Leds.led2Toggle();       //for debugging
