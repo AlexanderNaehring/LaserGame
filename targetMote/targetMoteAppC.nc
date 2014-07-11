@@ -1,36 +1,41 @@
-#include "targetMote.h"
+#include "Radio-Message.h"
+// #include "Msp430Adc12.h"
 
-configuration targetMoteAppC  {}
+
+configuration targetMoteAppC{}
 implementation {
 
-  components targetMoteC as App;
+  components MainC, LedsC, targetMoteC;
+
+  components new TimerMilliC() as LightTimer;
+  components new TimerMilliC() as ServoTimer1;
+  components new TimerMilliC() as ServoTimer2;
+
+  components new HamamatsuS10871TsrC() as LightRead;    //Light Sensor
   
-  components MainC, LedsC;
-  components new TimerMilliC() as Timer;
-  components new HamamatsuS1087ParC() as LightSensor;
-  components SerialStartC;
-    
-  // for debugging: use Serial interface, later change to radio
-  //components ActiveMessageC as ActiveMessage;
-  //components new AMSenderC(AM_LASERRADIO) as Sender;
-  //components new AMReceiverC(AM_LASERRADIO) as Receiver;
+  components ActiveMessageC;
+  components new AMSenderC(AM_Message);
+  components new AMReceiverC(AM_Message);
+  components HplMsp430GeneralIOC as GIO;
+  components UserButtonC;
   
-  components SerialActiveMessageC as ActiveMessage;
-  components new SerialAMSenderC(AM_LASERRADIO) as Sender;
-  components new SerialAMReceiverC(AM_LASERRADIO) as Receiver;
   
-  ///////////////////////////////////////////////////////////// 
-  // wiring
-  ///////////////////////////////////////////////////////////// 
+  targetMoteC.Boot -> MainC;
+  targetMoteC.Leds -> LedsC;
+
+  targetMoteC.LightTimer -> LightTimer;
+  targetMoteC.ServoTimer1 -> ServoTimer1;
+  targetMoteC.ServoTimer2 -> ServoTimer2;
   
-  App.Boot -> MainC;
-  App.Leds -> LedsC;
-  App.Timer -> Timer;
-  
-  App.Read -> LightSensor;
-  
-  App.ActiveMessage -> ActiveMessage;
-  App.Send -> Sender;
-  App.Receive -> Receiver;
+  targetMoteC.LightRead -> LightRead;
+
+  targetMoteC.Packet -> AMSenderC;
+  targetMoteC.AMPacket -> AMSenderC;
+  targetMoteC.AMControl -> ActiveMessageC;
+  targetMoteC.AMSend -> AMSenderC;
+  targetMoteC.Receive -> AMReceiverC;
+  targetMoteC.GIO -> GIO.Port23;
+
+  targetMoteC.Notify -> UserButtonC.Notify;
 }
 
