@@ -1,5 +1,5 @@
 ﻿; GUI for the Laser Game Project - SMEAGOL - INETS - RWTH AACHEN UNIVERSTIY
-; (C) July 2014, Alexander Nähring
+; © July 2014, Alexander Nähring
 ; 
 
 EnableExplicit
