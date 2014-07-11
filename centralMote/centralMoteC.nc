@@ -94,7 +94,7 @@ implementation  {
     if (len == sizeof(Message)) {
       Message* msgPtr = (Message*)payload;
       // This is frome the "gun" mote
-      if(msgPtr->identifier == 3) { // 
+      if(1) { // forward all messages regardless of identifier
         if (!serial_busy) {
           Message* msgPtr2 =    //receive the trigger event and number of bullets left from the gumMote 
           (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
@@ -104,23 +104,6 @@ implementation  {
           msgPtr2->identifier = msgPtr->identifier;  
           msgPtr2->payload = msgPtr->payload;
           msgPtr2->mote_id = msgPtr->mote_id;
-          if (call SerialAMSend.send(AM_BROADCAST_ADDR,   //send the payload(bullets) to the computer
-              &pkt, sizeof(Message)) == SUCCESS) {
-            serial_busy = TRUE;  // sending to SerialForwarder
-            call Leds.led1On();
-          }
-        }
-      } else if(msgPtr->identifier == 4){ // Message from the targets, It is a hitting
-        // Forward the counter over SF (pc)
-        if (!serial_busy) {
-          Message* msgPtr2 =    //receive the trigger event and number of bullets left from the gumMote 
-          (Message*)(call SerialPacket.getPayload(&pkt, sizeof(Message)));
-          if (msgPtr2 == NULL) {
-            return;
-          }
-          msgPtr2->identifier = msgPtr->identifier;  
-          msgPtr2->payload = msgPtr->payload;
-          
           if (call SerialAMSend.send(AM_BROADCAST_ADDR,   //send the payload(bullets) to the computer
               &pkt, sizeof(Message)) == SUCCESS) {
             serial_busy = TRUE;  // sending to SerialForwarder
