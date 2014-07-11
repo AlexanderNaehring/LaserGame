@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui\
-         network
+         network\ phonon
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,13 +15,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    SocketConnect.cpp \
-    SendProcess.cpp \
-    ListenProcess.cpp
+    SFProcess.cpp
 
 HEADERS  += mainwindow.h \
-    SocketConnect.h \
     SendProcess.h \
-    ListenProcess.h
+    SFProcess.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES = Resources.qrc

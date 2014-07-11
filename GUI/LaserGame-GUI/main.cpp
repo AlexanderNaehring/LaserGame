@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "SocketConnect.h"
 #include <QApplication>
 #include <QThread>
 
