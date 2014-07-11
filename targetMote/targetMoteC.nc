@@ -54,7 +54,7 @@ implementation  {
         //call LightTimer.stop();
         status_flag = FALSE;  // stop the servotimers
 
-      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id && mode_id != 0){  //start the game and set Movement
+      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id && mote_id != 0){  //start the game and set Movement
         call GIO.makeOutput(); 
         status_flag = TRUE;   
         targetOpenTime = msgPtr->payload1*1000;   // read custom pattern
@@ -83,8 +83,9 @@ implementation  {
             if (msgPtr == NULL) {
             return;
             }
-            msgPtr->identifier = 4; // 4 = new id assigned!
-            msgPtr->payload = 0;
+            msgPtr->identifier = 5; // 5 = new id assigned!
+            msgPtr->payload1 = 0;
+            msgPtr->payload2 = 0;
             msgPtr->mote_id = mote_id;
             if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(Message)) == SUCCESS) {
               busy = TRUE;
