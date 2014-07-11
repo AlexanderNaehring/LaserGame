@@ -54,8 +54,7 @@ implementation  {
         //call LightTimer.stop();
         status_flag = FALSE;  // stop the servotimers
 
-      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id && mode_id != 0){  //start the game and set Movement
-
+      }else if (msgPtr->identifier == 1 && msgPtr->mote_id == mote_id && mote_id != 0){  //start the game and set Movement
         call GIO.makeOutput(); 
         status_flag = TRUE;   
         targetOpenTime = msgPtr->payload1*1000;   // read custom pattern
@@ -72,10 +71,26 @@ implementation  {
           mote_id = (int)msgPtr->mote_id;   //assign mote ID
           game_mode = 1;
           id_wait = FALSE;
-          call Leds.led2Off(); // assigned.
-          call GIO.makeOutput();    // <-  Movement pattern ->
+          call Leds.led2Off();
+          call GIO.makeOutput();
           status_flag = FALSE;     
           servoPosition = 2; // 2 means closed
+		  
+          // answer back to central mote in order to give feedback to GUI
+          if (!busy) {
+            Message* msgPtr = 
+            (Message*)(call Packet.getPayload(&pkt, sizeof(Message)));
+            if (msgPtr == NULL) {
+            return;
+            }
+            msgPtr->identifier = 5; // 5 = new id assigned!
+            msgPtr->payload1 = 0;
+            msgPtr->payload2 = 0;
+            msgPtr->mote_id = mote_id;
+            if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(Message)) == SUCCESS) {
+              busy = TRUE;
+            }
+          }
         }
       }
     }

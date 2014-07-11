@@ -1,0 +1,86 @@
+; Form Designer for Purebasic - 5.11
+; Warning: this file uses a strict syntax, if you edit it, make sure to respect the Form Designer limitation or it won't be opened again.
+
+Global WindowMain
+
+Global GadgetButtonToggleGame, GadgetEditorLog, GadgetFrame3D_1, GadgetFrame3D_2, GadgetTextBullets, GadgetTextBulletsLeft, GadgetTextLevel, GadgetTextTarget01, GadgetTextT1Open, GadgetSpinBullets, GadgetProgressBarBullets, GadgetComboDifficulty, GadgetFrame3DDifficulty, GadgetTextTarget02, GadgetTextTarget03, GadgetTextT2Open, GadgetTextT3Open, GadgetTextT1Close, GadgetTextT2Close, GadgetTextT3Close, GadgetProgressBarTime, GadgetTextTimeLeft, GadgetStringT1Open, GadgetStringT2Open, GadgetStringT3Open, GadgetStringT1Close, GadgetStringT2Close, GadgetStringT3Close, GadgetButtonRegisterT, GadgetTextTime, GadgetButtonRegisterT1, GadgetButtonRegisterT2, GadgetButtonRegisterT3, GadgetSpinTime
+
+Enumeration #PB_Compiler_EnumerationValue
+  #Font_0
+EndEnumeration
+
+LoadFont(#Font_0,"Sans", 14)
+
+
+Procedure OpenWindowMain()
+  WindowMain = OpenWindow(#PB_Any, 0, 0, 800, 600, "LaserGameGUI", #PB_Window_SystemMenu | #PB_Window_MinimizeGadget | #PB_Window_ScreenCentered)
+  GadgetButtonToggleGame = ButtonGadget(#PB_Any, 20, 40, 150, 90, "Start Game", #PB_Button_Default)
+  SetGadgetFont(GadgetButtonToggleGame, FontID(#Font_0))
+  DisableGadget(GadgetButtonToggleGame, 1)
+  GadgetEditorLog = EditorGadget(#PB_Any, 0, 500, 800, 100, #PB_Editor_ReadOnly)
+  GadgetFrame3D_1 = Frame3DGadget(#PB_Any, 10, 190, 780, 300, "Game Information")
+  GadgetFrame3D_2 = Frame3DGadget(#PB_Any, 10, 10, 780, 170, "Game Control")
+  GadgetTextBullets = TextGadget(#PB_Any, 190, 35, 150, 20, "Number of Bullets:", #PB_Text_Right)
+  GadgetTextBulletsLeft = TextGadget(#PB_Any, 20, 240, 150, 20, "Bullets left:", #PB_Text_Right)
+  GadgetTextLevel = TextGadget(#PB_Any, 590, 35, 80, 20, "Difficulty:", #PB_Text_Right)
+  GadgetTextTarget01 = TextGadget(#PB_Any, 220, 90, 120, 20, "Target Mote #1", #PB_Text_Center)
+  GadgetTextT1Open = TextGadget(#PB_Any, 220, 120, 80, 20, "Opened:", #PB_Text_Right)
+  GadgetSpinBullets = SpinGadget(#PB_Any, 360, 30, 60, 30, 1, 127, #PB_Spin_Numeric)
+  DisableGadget(GadgetSpinBullets, 1)
+  GadgetProgressBarBullets = ProgressBarGadget(#PB_Any, 180, 240, 200, 20, 0, 0, #PB_ProgressBar_Smooth)
+  GadgetComboDifficulty = ComboBoxGadget(#PB_Any, 680, 30, 100, 30)
+  DisableGadget(GadgetComboDifficulty, 1)
+  GadgetFrame3DDifficulty = Frame3DGadget(#PB_Any, 203, 70, 577, 100, "Custom Difficulty Settings")
+  GadgetTextTarget02 = TextGadget(#PB_Any, 420, 90, 120, 20, "Target Mote #2", #PB_Text_Center)
+  GadgetTextTarget03 = TextGadget(#PB_Any, 620, 90, 120, 20, "Target Mote #3", #PB_Text_Center)
+  GadgetTextT2Open = TextGadget(#PB_Any, 420, 120, 80, 20, "Opened:", #PB_Text_Right)
+  GadgetTextT3Open = TextGadget(#PB_Any, 620, 120, 80, 20, "Opened:", #PB_Text_Right)
+  GadgetTextT1Close = TextGadget(#PB_Any, 220, 140, 80, 20, "Closed:", #PB_Text_Right)
+  GadgetTextT2Close = TextGadget(#PB_Any, 420, 140, 80, 20, "Closed:", #PB_Text_Right)
+  GadgetTextT3Close = TextGadget(#PB_Any, 620, 140, 80, 20, "Closed:", #PB_Text_Right)
+  GadgetProgressBarTime = ProgressBarGadget(#PB_Any, 180, 270, 200, 20, 0, 0, #PB_ProgressBar_Smooth)
+  GadgetTextTimeLeft = TextGadget(#PB_Any, 20, 270, 150, 20, "Time left:", #PB_Text_Right)
+  GadgetStringT1Open = StringGadget(#PB_Any, 300, 120, 40, 20, "5", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT1Open, "The duration in seconds for which the target stays open")
+  DisableGadget(GadgetStringT1Open, 1)
+  GadgetStringT2Open = StringGadget(#PB_Any, 500, 120, 40, 20, "4", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT2Open, "The duration in seconds for which the target stays open")
+  DisableGadget(GadgetStringT2Open, 1)
+  GadgetStringT3Open = StringGadget(#PB_Any, 700, 120, 40, 20, "3", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT3Open, "The duration in seconds for which the target stays open")
+  DisableGadget(GadgetStringT3Open, 1)
+  GadgetStringT1Close = StringGadget(#PB_Any, 300, 140, 40, 20, "2", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT1Close, "The duration in seconds for which the target stays closed")
+  DisableGadget(GadgetStringT1Close, 1)
+  GadgetStringT2Close = StringGadget(#PB_Any, 500, 140, 40, 20, "2", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT2Close, "The duration in seconds for which the target stays closed")
+  DisableGadget(GadgetStringT2Close, 1)
+  GadgetStringT3Close = StringGadget(#PB_Any, 700, 140, 40, 20, "2", #PB_String_Numeric)
+  GadgetToolTip(GadgetStringT3Close, "The duration in seconds for which the target stays closed")
+  DisableGadget(GadgetStringT3Close, 1)
+  GadgetButtonRegisterT = ButtonGadget(#PB_Any, 20, 145, 150, 25, "Register Target")
+  DisableGadget(GadgetButtonRegisterT, 1)
+  GadgetTextTime = TextGadget(#PB_Any, 440, 35, 60, 20, "Time:", #PB_Text_Right)
+  GadgetButtonRegisterT1 = ButtonGadget(#PB_Any, 350, 90, 20, 20, "*")
+  GadgetButtonRegisterT2 = ButtonGadget(#PB_Any, 550, 90, 20, 20, "*")
+  GadgetButtonRegisterT3 = ButtonGadget(#PB_Any, 750, 90, 20, 20, "*")
+  GadgetSpinTime = SpinGadget(#PB_Any, 510, 30, 60, 30, 1, 600, #PB_Spin_Numeric)
+  DisableGadget(GadgetSpinTime, 1)
+EndProcedure
+
+Procedure WindowMain_Events(event)
+  Select event
+    Case #PB_Event_CloseWindow
+      ProcedureReturn #False
+
+    Case #PB_Event_Menu
+      Select EventMenu()
+      EndSelect
+
+    Case #PB_Event_Gadget
+      Select EventGadget()
+      EndSelect
+  EndSelect
+  ProcedureReturn #True
+EndProcedure
+
