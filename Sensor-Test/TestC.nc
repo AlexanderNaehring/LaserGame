@@ -17,8 +17,9 @@ implementation
   int tmp = 0;
   event void Boot.booted() {
     call Leds.led0On();
-    call Timer1.startOneShot(500);
-    call Timer2.startPeriodic(2000);
+  //  call Timer1.startOneShot(500);
+  //  call Timer2.startPeriodic(2000);
+    call Timer2.startPeriodic(100);
     call Notify.enable();
   }
   
@@ -27,18 +28,19 @@ implementation
       flag = (flag == 0);
       call GIO.makeOutput();
       if (flag){
-          call GIO.set();
+//          call GIO.set();
           if(tmp)
              call Timer1.startOneShot(1);
            else
              call Timer1.startOneShot(3);
       }else{
-          call GIO.clr();
+//          call GIO.clr();
           call Timer1.startOneShot(40);
       }
 
   }
   event void Timer2.fired()	{
+     call LightRead.read();
      tmp = (tmp==0);
    }
 
