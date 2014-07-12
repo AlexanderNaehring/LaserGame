@@ -4,7 +4,9 @@
 configuration TestAppC{}
 implementation {
   components MainC, LedsC, TestC;
+  
   components new HamamatsuS10871TsrC() as LightRead;    //Light Sensor
+  //components new HamamatsuS1087ParC() as LightRead;    //Light Sensor
   components UserButtonC;
   components PrintfC;
   components SerialStartC;

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QTime>
 #include <QDataStream>
 #include <SFProcess.h>
 #include <QSound>
@@ -29,6 +30,7 @@ private slots:
     void listenerUpdate(QString);
     void serverUpdate(QString);
     void BSlider2Num(int);
+    void timerUpdate();
     // void slotProcessError(QProcess::ProcessError);
 
 //    void senderStartError();
@@ -69,22 +71,34 @@ private slots:
 
     void on_CmodeStop_clicked();
 
+    void on_TmodeStart_clicked();
+
+    void on_TmodeStop_clicked();
+
 private:
     SFProcess* senderProcess;
     SFProcess* serverProcess;
     SFProcess* listenerProcess;
 
     Ui::MainWindow *ui;
+
     bool listenerConnected;
-//    QTimer* gameTimer = new QTimer;
-//    QTimer* UITimer = new QTimer;
+
+    QTime* gameTime;
+    QTimer* UITimer;
+    QString time;
+
     QString payload;
     QString T1Pattern,T2Pattern,T3Pattern,THard,TMedium,TEasy;
     double accuracy;
     int bullets;
+    bool Tmode,TmodeT1H,TmodeT2H,TmodeT3H,TmodeAllH;
+
     Phonon::MediaObject *reload;
     Phonon::MediaObject *fire;
     Phonon::MediaObject *hit;
+    Phonon::MediaObject *ready;
+    Phonon::MediaObject *steady;
 
 
 };

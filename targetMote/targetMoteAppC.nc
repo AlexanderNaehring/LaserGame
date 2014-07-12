@@ -11,7 +11,7 @@ implementation {
   components new TimerMilliC() as ServoTimer1;
   components new TimerMilliC() as ServoTimer2;
 
-  components new HamamatsuS10871TsrC() as LightRead;    //Light Sensor
+  components new HamamatsuS10871TsrC()  as LightRead;    //Light Sensor
   
   components ActiveMessageC;
   components new AMSenderC(AM_Message);

@@ -85,7 +85,7 @@ implementation  {
     if (len == sizeof(Message)) {
       Message* msgPtr = (Message*)payload;
       // This is the "gun" mote
-      if(msgPtr->identifier == 0) { //It should stop  
+      if(msgPtr->identifier == 0 && msgPtr->mote_id == 0) { //It should stop  
         max_bullets = 0;   //clear the bullets
       } else  { 
         if (msgPtr->identifier == 1 && msgPtr->mote_id == 0) {  //start the game with certain number of bullets

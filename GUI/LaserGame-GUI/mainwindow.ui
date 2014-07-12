@@ -575,33 +575,26 @@
         <string>Stop</string>
        </property>
       </widget>
-      <widget class="QGraphicsView" name="graphicsView">
+      <widget class="QLCDNumber" name="timerDisplay">
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>10</y>
-         <width>256</width>
-         <height>192</height>
+         <y>40</y>
+         <width>251</width>
+         <height>121</height>
         </rect>
        </property>
-      </widget>
-      <widget class="QLabel" name="label_4">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>30</y>
-         <width>261</width>
-         <height>151</height>
-        </rect>
+       <property name="frameShape">
+        <enum>QFrame::WinPanel</enum>
        </property>
-       <property name="text">
-        <string/>
+       <property name="smallDecimalPoint">
+        <bool>false</bool>
        </property>
-       <property name="pixmap">
-        <pixmap resource="Resources.qrc">:/src/image/comingsoon_stamp.png</pixmap>
+       <property name="digitCount">
+        <number>5</number>
        </property>
-       <property name="scaledContents">
-        <bool>true</bool>
+       <property name="segmentStyle">
+        <enum>QLCDNumber::Flat</enum>
        </property>
       </widget>
      </widget>
@@ -737,8 +730,6 @@ p, li { white-space: pre-wrap; }
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources>
-  <include location="Resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
