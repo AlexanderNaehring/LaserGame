@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/src/image">
+        <file>comingsoon_stamp.png</file>
+    </qresource>
+</RCC>

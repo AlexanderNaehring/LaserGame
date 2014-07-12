@@ -2,12 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTcpSocket>
-#include "SocketConnect.h"
 #include <QTimer>
-#include <QThread>
 #include <QDataStream>
-#include <ListenProcess.h>
+#include <SFProcess.h>
+#include <QSound>
+#include <phonon/phonon>
 
 namespace Ui {
 class MainWindow;
@@ -20,37 +19,74 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    bool sfsend(QString);
 
 
     
 private slots:
-    void on_pushButton_clicked();
 
-    void on_pushButton_2_clicked();
+    void senderUpdate(QString);
+    void listenerUpdate(QString);
+    void serverUpdate(QString);
+    void BSlider2Num(int);
+    // void slotProcessError(QProcess::ProcessError);
 
-    void listener_connected();
+//    void senderStartError();
+//    void listenerStartError();
+//    void serverStartError();
 
-    void listener_disconnected();
+    void on_connect_clicked();
 
-    void listener_readyRead();
+    void on_setT1_clicked();
 
-    void listener_fail();
+    void on_setT2_clicked();
 
-    void sender_sent();
+    void on_setT3_clicked();
 
+    void on_consoleClear_clicked();
 
-    void on_pushButton_3_clicked();
+    void on_bulletLoad_clicked();
 
-    void on_pushButton_4_clicked();
+    void on_T1E_clicked();
 
-    void on_pushButton_5_clicked();
+    void on_T1M_clicked();
+
+    void on_T1H_clicked();
+
+    void on_T2E_clicked();
+
+    void on_T2M_clicked();
+
+    void on_T2H_clicked();
+
+    void on_T3E_clicked();
+
+    void on_T3M_clicked();
+
+    void on_T3H_clicked();
+
+    void on_CmodeStart_clicked();
+
+    void on_CmodeStop_clicked();
 
 private:
+    SFProcess* senderProcess;
+    SFProcess* serverProcess;
+    SFProcess* listenerProcess;
+
     Ui::MainWindow *ui;
-    SocketConnect* sender = new SocketConnect;
-    SocketConnect* listener = new SocketConnect;
-    QTimer *listenTimer = new QTimer(this);
-    ListenProcess listenerProcess;
+    bool listenerConnected;
+//    QTimer* gameTimer = new QTimer;
+//    QTimer* UITimer = new QTimer;
+    QString payload;
+    QString T1Pattern,T2Pattern,T3Pattern,THard,TMedium,TEasy;
+    double accuracy;
+    int bullets;
+    Phonon::MediaObject *reload;
+    Phonon::MediaObject *fire;
+    Phonon::MediaObject *hit;
+
+
 };
 
 #endif // MAINWINDOW_H

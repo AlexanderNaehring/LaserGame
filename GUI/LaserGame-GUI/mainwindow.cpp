@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "SocketConnect.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -8,87 +7,267 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    listenerProcess.StartProcess();
-
-//    connect(sender, SIGNAL(connected()), this, SLOT(connected()));
-//    connect(sender, SIGNAL(disconnected()), this, SLOT(disconnected()));
-//    connect(sender, SIGNAL(readyRead()), this, SLOT(readyRead()));
-//    connect(sender, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWritten(qint64)));
-
-//    connect(listener->socket, SIGNAL(connected()), this, SLOT(listener_connected()));
-//    connect(listener->socket, SIGNAL(disconnected()), this, SLOT(listener_disconnected()));
-//    connect(listener->socket, SIGNAL(readyRead()), this, SLOT(listener_readyRead()));
-//    connect(listener, SIGNAL(errorOccurs()), this, SLOT(listener_fail()));
-//    connect(this->listenTimer, SIGNAL(timeout()), listener, SLOT(run()));
-
-    //QThread threadListener;
-    //Qthread threadSender;
-
-   // listener->moveToThread(&threadListener);
-    //listenTimer->moveToThread(&threadListener);
-    //sender->moveToThread(&threadSender);
-
-    //threadListener.start();
 
 
+
+//    SFProcess* serverProcess = new SFProcess;
+//    serverProcess->program = "./sf";
+//    serverProcess->arguments=" 8080 /dev/ttyUSB0 115200";
+//    serverProcess->StartProcess();
+
+
+    listenerProcess = new SFProcess;
+    listenerConnected = false;
+    senderProcess = new SFProcess;
+
+    connect(senderProcess,SIGNAL(outputUpdate(QString)),this,SLOT(senderUpdate(QString)));
+    connect(listenerProcess,SIGNAL(outputUpdate(QString)),this,SLOT(listenerUpdate(QString)));
+//    connect(serverProcess,SIGNAL(outputUpdate(QString)),this,SLOT(serverUpdate(QString)));
+    connect(ui->bulletSlider,SIGNAL(valueChanged(int)),this,SLOT(BSlider2Num(int)));
+
+    THard = "0x01 0x01";
+    TMedium = "0x03 0x02";
+    TEasy = "0x99 0x01";
+    T1Pattern = TEasy;
+    T2Pattern = TMedium;
+    T3Pattern = THard;
+
+    reload = Phonon::createPlayer(Phonon::NoCategory,Phonon::MediaSource("RELOAD.wav"));
+    fire = Phonon::createPlayer(Phonon::NoCategory,Phonon::MediaSource("GUN_FIRE.wav"));
+    hit = Phonon::createPlayer(Phonon::NoCategory,Phonon::MediaSource("HIT.wav"));
+//    hit->play();
+
+    // initialize
+    listenerProcess->program = "./sflisten";
+    listenerProcess->arguments = " localhost 9001";
+    if(!listenerProcess->StartProcess())
+        ui->ListenerLog->append("Listener failed to start");
+    else {
+        ui->ListenerLog->append("Listener started");
+        ui->connect->setText("Disconnect");
+        listenerConnected = true;
+    }
 }
 
 MainWindow::~MainWindow()
 {
+    listenerProcess->myProcess->close();
     delete ui;
 }
 
+bool MainWindow::sfsend(QString payload){
+    senderProcess->program = "./sfsend";
+    QString prefix = " localhost 9001 0x00 0xff 0xff 0xff 0xff 0x04 0x22 0x06 ";
+    senderProcess->arguments = prefix + payload;
+    if(!senderProcess->StartProcess()){
+        return false;
+    }
+    else return true;
+}
 
-void MainWindow::on_pushButton_clicked()
+
+void MainWindow::senderUpdate(QString output)
 {
-
-    //listenTimer->timeout();
-//    listener->run();
-
+    ui->senderLog->append("S: " + output);
 }
 
-
-void MainWindow::on_pushButton_2_clicked()
+void MainWindow::listenerUpdate(QString output)
 {
-    ui->connectStatus->clear();
+    bool Hex2Int;
+    output.remove(0,24);
+    ui->ListenerLog->append("l: " + output);
+    QStringList revPayload =output.split(" ",QString::SkipEmptyParts);
+    // ui->ListenerLog->append("l: " + revPayload[0]+"l: " + revPayload[1]+"l: " + revPayload[2]+"l: " + revPayload[3]);
+    int identifier = revPayload[0].toInt(&Hex2Int,16);
+    int moteID = revPayload[1].toInt(&Hex2Int,16);
+    int num = revPayload[2].toInt(&Hex2Int,16)+revPayload[3].toInt(&Hex2Int,16);
+    qDebug() << " iden "<<identifier<<" mote "<<moteID<<" num "<<num;
+    switch (identifier){
+        case 5:
+                ui->senderLog->append("Target "+QString::number(moteID)+" is set!");
+                break;
+        case 4:
+                hit->play();
+                if(moteID == 1)
+                    ui->T1D->display(num);
+                if(moteID == 2)
+                    ui->T2D->display(num);
+                if(moteID == 3)
+                    ui->T3D->display(num);
+                ui->AllTD->display(ui->T1D->intValue()+ui->T2D->intValue()+ui->T3D->intValue());
+                ui->Accuracy->setValue(100*ui->AllTD->intValue() / ui->BulletD->intValue());
+                break;
+        case 3: 
+                fire->play(); 
+                ui->BulletD->display(num);
+                if(ui->BulletD->intValue() != 0)
+                    ui->Accuracy->setValue(100*ui->AllTD->intValue() / ui->BulletD->intValue());
+                break;
+        default: break;
+    }
+
+
 }
 
-void MainWindow::listener_connected(){
-
-
-}
-
-void MainWindow::listener_disconnected(){
-    ui->connectStatus->append("Listener disconnected");
-}
-
-void MainWindow::listener_readyRead(){
-    ui->connectStatus->append("Listener Reading");
-    ui->receiveMsg->append(listener->socket->readAll());
-}
-
-void MainWindow::listener_fail(){
-    ui->connectStatus->append("Listener connect error: "+this->listener->socket->errorString());
-}
-
-void MainWindow::sender_sent(){
-    ui->connectStatus->append("Command sent!");
-}
-
-void MainWindow::on_pushButton_3_clicked()
+void MainWindow::serverUpdate(QString output)
 {
-    listener->socket->abort();
+//     ui->serverLog->append(" " + output);
 }
 
-void MainWindow::on_pushButton_4_clicked()
+
+void MainWindow::on_connect_clicked()
 {
-    sender->run();
-    QByteArray receiveMsg = "00 FF FF FF FF 02 04 06";
-    receiveMsg.append(ui->sendMsg->text());
-    sender->socket->write(receiveMsg);
+    if(!listenerConnected){
+        listenerProcess->program = "./sflisten";
+        listenerProcess->arguments = " localhost 9001";
+        if(!listenerProcess->StartProcess())
+            ui->ListenerLog->append("Listener failed to start");
+        else {
+            ui->ListenerLog->append("Listener started");
+            ui->connect->setText("Disconnect");
+            listenerConnected = true;
+        }
+    }
+    else{
+        listenerProcess->myProcess->close();
+        ui->connect->setText("Connect");
+        ui->ListenerLog->append("Listener Stopped");
+        listenerConnected = false;
+    }
 }
 
-void MainWindow::on_pushButton_5_clicked()
+void MainWindow::on_setT1_clicked()
 {
-    ui->receiveMsg->clear();
+    if(sfsend("0x02 0x01 0x00 0x00"))
+        ui->senderLog->append("Setting Target 1.....");
+    else ui->senderLog->append("Target 1 is set unsuccessful!");
+}
+
+void MainWindow::on_setT2_clicked()
+{
+    if(sfsend("0x02 0x02 0x00 0x00"))
+        ui->senderLog->append("Setting Target 2.....");
+    else ui->senderLog->append("Target 2 is set unsuccessful!");;
+}
+
+void MainWindow::on_setT3_clicked()
+{
+    if(sfsend("0x02 0x03 0x00 0x00"))
+        ui->senderLog->append("Setting Target 3.....");
+    else ui->senderLog->append("Target 3 is set unsuccessful!");
+}
+
+void MainWindow::BSlider2Num(int num){
+    ui->bulletNum->setText(QString::number(num));
+}
+
+void MainWindow::on_consoleClear_clicked()
+{
+    ui->senderLog->clear();
+    ui->ListenerLog->clear();
+}
+
+
+void MainWindow::on_bulletLoad_clicked()
+{
+    QString payload;
+    bool String2Int;
+    payload.setNum(ui->bulletNum->text().toUInt(&String2Int,10),16);
+    if(sfsend("0x01 0x00 0x00 0x"+payload)){
+        ui->senderLog->append(payload + " Bullets loaded!");
+        reload->play();
+    }
+    else ui->senderLog->append("Bullets loadding unsuccessful!");
+}
+
+void MainWindow::on_T1E_clicked()
+{
+    T1Pattern = TEasy;
+}
+
+void MainWindow::on_T1M_clicked()
+{
+    T1Pattern = TMedium;
+}
+
+void MainWindow::on_T1H_clicked()
+{
+    T1Pattern = THard;
+}
+void MainWindow::on_T2E_clicked()
+{
+    T2Pattern = TEasy;
+}
+
+void MainWindow::on_T2M_clicked()
+{
+    T2Pattern = TMedium;
+}
+
+void MainWindow::on_T2H_clicked()
+{
+    T2Pattern = THard;
+}
+void MainWindow::on_T3E_clicked()
+{
+    T3Pattern = TEasy;
+}
+
+void MainWindow::on_T3M_clicked()
+{
+    T3Pattern = TMedium;
+}
+
+void MainWindow::on_T3H_clicked()
+{
+    T3Pattern = THard;
+}
+
+void MainWindow::on_CmodeStart_clicked()
+{
+    QString payload = QString::number(ui->bulletNum->text().toInt(),16); //send bullet
+    if(sfsend("0x01 0x00 0x00 "+payload)){
+        ui->senderLog->append("<b>"+payload + "</b> Bullets loaded!");
+        reload->play();
+    }
+    else ui->senderLog->append("Bullets loadding unsuccessful!");
+
+    QEventLoop loop;
+    QTimer::singleShot(1000, &loop, SLOT(quit()));
+    loop.exec();
+
+    if(sfsend("0x01 0x01 "+T1Pattern))                                   //send T1 pattern
+        ui->senderLog->append("Setting Target Pattern 1.....");
+    else ui->senderLog->append("Target 1 is set unsuccessful!");
+
+    QTimer::singleShot(1000, &loop, SLOT(quit()));
+    loop.exec();
+
+    if(sfsend("0x01 0x02 "+T2Pattern))                                   //send T2 pattern
+        ui->senderLog->append("Setting Target Pattern 2.....");
+    else ui->senderLog->append("Target 2 is set unsuccessful!");
+
+    QTimer::singleShot(1000, &loop, SLOT(quit()));
+    loop.exec();
+
+    if(sfsend("0x01 0x03 "+T3Pattern))                                   //send T3 pattern
+        ui->senderLog->append("Setting Target Pattern 3.....");
+    else ui->senderLog->append("Target 3 is set unsuccessful!");
+
+    ui->senderLog->append("<b>Game started !<b>");
+
+}
+
+void MainWindow::on_CmodeStop_clicked()
+{
+    if(sfsend("0x00 0x00 0x00 0x00")) {
+        ui->senderLog->append("<b>Game Stopped.<b>");
+        ui->T1D->display(0);
+        ui->T2D->display(0);
+        ui->T3D->display(0);
+        ui->AllTD->display(0);
+        ui->BulletD->display(0);
+        ui->Accuracy->setValue(0);
+    }                                  //Stop all
+    else ui->senderLog->append("Game didn't stop successfully!");;
 }

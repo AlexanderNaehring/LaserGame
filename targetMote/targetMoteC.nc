@@ -89,6 +89,7 @@ implementation  {
             msgPtr->mote_id = mote_id;
             if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(Message)) == SUCCESS) {
               busy = TRUE;
+              call Leds.led0Off();
             }
           }
         }
@@ -110,7 +111,7 @@ implementation  {
 // It's a hit or not
   event void LightRead.readDone(error_t result, uint16_t val)  {
     if(result == SUCCESS) {
-      if(val >= 600) {       // Yeah, it is a hit!
+      if(val >= 300) {       // Yeah, it is a hit!
         hit_counter++;
         call LightTimer.startOneShot(750); // if there is a hit, wait a little bit longer
         //sending this hit
