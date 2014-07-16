@@ -9,16 +9,24 @@ XIncludeFile "mainWindow.pbf"
 Global PrSF
 Global PrSFLISTEN
 Global Event
-Global WaitInit
+Global WaitInit, ErrorText$
 Global GameRunning
 
 Global dir$
 dir$ = GetCurrentDirectory()
 Debug dir$
 
+Structure TargetMotes
+  MoteT1.i
+  MoteT2.i
+  MoteT3.i
+EndStructure
+
 Global BulletsShot, BulletsMax
 Global TimeMax, TimeStart, TimeLeft
-Global MoteT1, MoteT2, MoteT3, ReceivedMoteID
+Global ReceivedMoteID
+Global Motes.TargetMotes
+Global Hits.TargetMotes
 
 InitSound()
 UseOGGSoundDecoder()
@@ -26,7 +34,7 @@ Global SoundShot = LoadSound(#PB_Any, dir$+"gun.ogg")
 Global Dim SoundHit(4)
 Define i
 For i = 0 To 3
-SoundHit(i) = LoadSound(#PB_Any, dir$+"hit"+Str(i)+".ogg")
+  SoundHit(i) = LoadSound(#PB_Any, dir$+"hit"+Str(i)+".ogg")
 Next
 
 Declare addLog(logEntry$)
@@ -55,13 +63,15 @@ EndProcedure
 Procedure close()
   addLog("shuting down GUI...")
   HideWindow(WindowMain, #True)
+  If IsProgram(PrSF)
+    KillProgram(PrSF)
+    CloseProgram(PrSF)
+  EndIf
+  If(PrSFLISTEN)
+    KillProgram(PrSFLISTEN)
+    CloseProgram(PrSFLISTEN)
+  EndIf
   CloseWindow(WindowMain)
-  
-  KillProgram(PrSF)
-  CloseProgram(PrSF)
-  KillProgram(PrSFLISTEN)
-  CloseProgram(PrSFLISTEN)
-  
   End
 EndProcedure
 
@@ -69,27 +79,21 @@ Procedure init(*dummy) ; Init Thread
   addLog("Starting SF...")
   PrSF = RunProgram(dir$+"sf", "9001 /dev/ttyUSB0 115200", "./", #PB_Program_Open|#PB_Program_Read|#PB_Program_Error)
   If Not IsProgram(PrSF)
-    addLog("Could not run SF")
-    MessageRequester("Error","Could not run SF", #PB_MessageRequester_Ok)
-    close()
+    ErrorText$ = "Could not run SF"
   EndIf
-  Delay(800) ; wait for SF to start  
+  Delay(800) ; wait for SF to boot and connect to serial port
   
   addLog("Starting SFLISTEN...")
   PrSFLISTEN = RunProgram(dir$+"sflisten", "localhost 9001", "./", #PB_Program_Open|#PB_Program_Read|#PB_Program_Error)
   If Not IsProgram(PrSF)
-    addLog("Could not run SFLISTEN")
-    MessageRequester("Error","Could not run SFLISTEN", #PB_MessageRequester_Ok)
-    close()
+    ErrorText$ = "Could Not run SFLISTEN"
   EndIf
-  Delay(500) ; wait for sflisten
   
-  addLog("Initialization complete...")
   WaitInit = #False
   ProcedureReturn #True
 EndProcedure
 
-Procedure updateProgressBar() ; update graphical interface for remeaining bullets
+Procedure updateProgressBar() ; update graphical interface for remaining bullets and time
   SetGadgetAttribute(GadgetProgressBarBullets, #PB_ProgressBar_Minimum, 0)
   SetGadgetAttribute(GadgetProgressBarBullets, #PB_ProgressBar_Maximum, BulletsMax)
   SetGadgetState(GadgetProgressBarBullets, BulletsMax-BulletsShot)
@@ -182,9 +186,6 @@ Procedure sfsendMovement(moteID, openTime, closeTime, randomize = #True)
   sfsend(1,moteID,openTime,closeTime)
 EndProcedure
 
-
-
-
 Procedure sflistenHandleOutput(Output$) 
   Debug "sflisten: '" + Output$ + "'"
   Protected header$ = "00 ff ff ff 01 04 3f 06 "
@@ -202,7 +203,6 @@ Procedure sflistenHandleOutput(Output$)
     moteID  = Val("$" + Mid(Output$, 4, 2))
     payload1 = Val("$" + Mid(Output$, 7, 2))
     payload2 = Val("$" + Mid(Output$, 10, 2))
-    ;Debug "(id, moteID, pay1, pay2) = ("+Str(identifier)+", "+Str(moteID)+", "+Str(payload1)+", "+Str(payload2)+")"
     
     Select identifier
         
@@ -234,11 +234,11 @@ Procedure sflistenHandleOutput(Output$)
         addLog("sflisten: received feedback from moteID "+Str(moteID))
         Select moteID
           Case 1
-              moteT1 = #True 
+              Motes\moteT1 = #True 
           Case 2
-              moteT2 = #True 
+              Motes\moteT2 = #True 
           Case 3
-              moteT3 = #True 
+              Motes\moteT3 = #True 
           EndSelect
       EndSelect
   Else
@@ -259,13 +259,13 @@ Procedure startGame()
   Protected randomize
   randomize = #False
   
-  If MoteT1
+  If Motes\MoteT1
     sfsendMovement(1, Val(GetGadgetText(GadgetStringT1Open)), Val(GetGadgetText(GadgetStringT1Close)), randomize)
   EndIf
-  If MoteT2
+  If Motes\MoteT2
     sfsendMovement(2, Val(GetGadgetText(GadgetStringT2Open)), Val(GetGadgetText(GadgetStringT2Close)), randomize)
   EndIf
-  If MoteT3
+  If Motes\MoteT3
     sfsendMovement(3, Val(GetGadgetText(GadgetStringT3Open)), Val(GetGadgetText(GadgetStringT3Close)), randomize)
   EndIf
   
@@ -304,11 +304,11 @@ Procedure registerTargetMote(moteID)
     
     Select moteID
       Case 1
-        MoteT1 = #False
+        Motes\MoteT1 = #False
       Case 2 
-        MoteT2 = #False
+        Motes\MoteT2 = #False
       Case 3
-        MoteT3 = #False
+        Motes\MoteT3 = #False
     EndSelect
     
     ;MessageRequester("Registering a new target mote", "Please press the user button on ONE target mote NOW!"+Chr(13)+"Afterwards, click OK", #PB_MessageRequester_Ok)
@@ -345,6 +345,13 @@ Repeat ; main loop
   If LastUpdate < ElapsedMilliseconds()-100 ; check gadgets etc every 100 ms
     LastUpdate = ElapsedMilliseconds()
     
+    If ErrorText$
+      addLog(ErrorText$)
+      MessageRequester("Error", ErrorText$, #PB_MessageRequester_Ok)
+      ErrorText$ = ""
+      close()
+    EndIf
+        
     If WaitInit
       ;{ Initialization not finished
       ; keep all controls disabled and don't do anything
@@ -354,6 +361,10 @@ Repeat ; main loop
       Global Output$
       
       ;{ SF
+      If Not IsProgram(PrSF) Or Not ProgramRunning(PrSF)
+        MessageRequester("Error", "SF has stopped!", #PB_MessageRequester_Ok)
+        close()
+      EndIf
       Output$ = ReadProgramError(PrSF)
       If Output$
         Output$ = "SF error: "+Output$
@@ -366,13 +377,13 @@ Repeat ; main loop
         Output$ = "sf: " + ReadProgramString(PrSF)
         addLog(Output$)
       EndIf
-      If Not ProgramRunning(PrSF)
-        MessageRequester("Error", "SF has stopped!", #PB_MessageRequester_Ok)
-        close()
-      EndIf
       ;}
       
       ;{ SFLISTEN
+      If Not IsProgram(PrSFLISTEN) Or Not ProgramRunning(PrSFLISTEN)
+        MessageRequester("Error", "SFLISTEN has stopped!", #PB_MessageRequester_Ok)
+        close()
+      EndIf
        Output$ = ReadProgramError(PrSFLISTEN)
        If Output$
         Output$ = "SFLISTEN error: "+Output$
@@ -384,23 +395,17 @@ Repeat ; main loop
         If Output$
           sflistenHandleOutput(Output$)
         EndIf
-        
-      EndIf
-      If Not ProgramRunning(PrSFLISTEN)
-        MessageRequester("Error", "SFLISTEN has stopped!", #PB_MessageRequester_Ok)
-        close()
       EndIf
       ;}
       
       ;{ Gadgets
       updateProgressBar()
       
+      Define Last.TargetMotes
       
-      Define last_MoteT1, last_MoteT2, last_MoteT3
-      
-      If Not MoteT1 = last_MoteT1
-        last_MoteT1 = MoteT1
-        If MoteT1
+      If Not Motes\MoteT1 = Last\MoteT1
+        Last\MoteT1 = Motes\MoteT1
+        If Motes\MoteT1
           DisableGadget(GadgetStringT1Open, #False)
           DisableGadget(GadgetStringT1Close, #False)
         Else
@@ -408,9 +413,9 @@ Repeat ; main loop
           DisableGadget(GadgetStringT1Close, #True)
         EndIf 
       EndIf
-      If Not MoteT2 = last_MoteT2
-        last_MoteT2 = MoteT2
-        If MoteT2
+      If Not Motes\MoteT2 = Last\MoteT2
+        Last\MoteT2 = Motes\MoteT2
+        If Motes\MoteT2
           DisableGadget(GadgetStringT2Open, #False)
           DisableGadget(GadgetStringT2Close, #False)
         Else
@@ -418,9 +423,9 @@ Repeat ; main loop
           DisableGadget(GadgetStringT2Close, #True)
         EndIf 
       EndIf
-      If Not MoteT3 = last_MoteT3
-        last_MoteT3 = MoteT3
-        If MoteT3
+      If Not Motes\MoteT3 = Last\MoteT3
+        Last\MoteT3 = Motes\MoteT3
+        If Motes\MoteT3
           DisableGadget(GadgetStringT3Open, #False)
           DisableGadget(GadgetStringT3Close, #False)
         Else
@@ -429,7 +434,8 @@ Repeat ; main loop
         EndIf 
       EndIf
             
-      If MoteT1 Or MoteT2 Or MoteT3 ; at least one target has to be online in order to start a new game
+      If Motes\MoteT1 Or Motes\MoteT2 Or Motes\MoteT3
+        ; at least one target has to be online in order to start a new game
         DisableGadget(GadgetButtonToggleGame, #False  )
         DisableGadget(GadgetSpinBullets, #False)
         DisableGadget(GadgetComboDifficulty, #False)
@@ -441,7 +447,7 @@ Repeat ; main loop
         DisableGadget(GadgetComboDifficulty, #True)
         DisableGadget(GadgetSpinTime, #True)
         If GameRunning
-          stopGame()
+          stopGame()  ; stop all possibly running games
         EndIf
       EndIf
             
@@ -478,10 +484,10 @@ Repeat ; main loop
   ;} 
   
 ForEver
-; IDE Options = PureBasic 5.11 (Linux - x86)
-; CursorPosition = 207
-; FirstLine = 127
-; Folding = O+3-
+; IDE Options = PureBasic 5.11 (Linux - x64)
+; CursorPosition = 72
+; FirstLine = 51
+; Folding = HA5-
 ; EnableThread
 ; EnableXP
 ; Executable = LGGUI
