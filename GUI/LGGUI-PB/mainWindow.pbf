@@ -3,13 +3,15 @@
 
 Global WindowMain
 
-Global GadgetButtonToggleGame, GadgetEditorLog, GadgetFrame3D_1, GadgetFrame3D_2, GadgetTextBullets, GadgetTextBulletsLeft, GadgetTextLevel, GadgetTextTarget01, GadgetTextT1Open, GadgetSpinBullets, GadgetProgressBarBullets, GadgetComboDifficulty, GadgetFrame3DDifficulty, GadgetTextTarget02, GadgetTextTarget03, GadgetTextT2Open, GadgetTextT3Open, GadgetTextT1Close, GadgetTextT2Close, GadgetTextT3Close, GadgetProgressBarTime, GadgetTextTimeLeft, GadgetStringT1Open, GadgetStringT2Open, GadgetStringT3Open, GadgetStringT1Close, GadgetStringT2Close, GadgetStringT3Close, GadgetButtonRegisterT, GadgetTextTime, GadgetButtonRegisterT1, GadgetButtonRegisterT2, GadgetButtonRegisterT3, GadgetSpinTime
+Global GadgetButtonToggleGame, GadgetEditorLog, GadgetFrame3D_1, GadgetFrame3D_2, GadgetTextBullets, GadgetTextBulletsLeft, GadgetTextLevel, GadgetTextTarget01, GadgetTextT1Open, GadgetSpinBullets, GadgetProgressBarBullets, GadgetComboDifficulty, GadgetFrame3DDifficulty, GadgetTextTarget02, GadgetTextTarget03, GadgetTextT2Open, GadgetTextT3Open, GadgetTextT1Close, GadgetTextT2Close, GadgetTextT3Close, GadgetProgressBarTime, GadgetTextTimeLeft, GadgetStringT1Open, GadgetStringT2Open, GadgetStringT3Open, GadgetStringT1Close, GadgetStringT2Close, GadgetStringT3Close, GadgetButtonRegisterT, GadgetTextTime, GadgetButtonRegisterT1, GadgetButtonRegisterT2, GadgetButtonRegisterT3, GadgetSpinTime, GadgetTextHit
 
 Enumeration #PB_Compiler_EnumerationValue
   #Font_0
+  #Font_1
 EndEnumeration
 
-LoadFont(#Font_0,"Sans", 14)
+LoadFont(#Font_0,"Sans", 16)
+LoadFont(#Font_1,"Sans", 12)
 
 
 Procedure OpenWindowMain()
@@ -17,17 +19,18 @@ Procedure OpenWindowMain()
   GadgetButtonToggleGame = ButtonGadget(#PB_Any, 20, 40, 150, 90, "Start Game", #PB_Button_Default)
   SetGadgetFont(GadgetButtonToggleGame, FontID(#Font_0))
   DisableGadget(GadgetButtonToggleGame, 1)
-  GadgetEditorLog = EditorGadget(#PB_Any, 0, 500, 800, 100, #PB_Editor_ReadOnly)
-  GadgetFrame3D_1 = Frame3DGadget(#PB_Any, 10, 190, 780, 300, "Game Information")
+  GadgetEditorLog = EditorGadget(#PB_Any, 0, 450, 800, 150, #PB_Editor_ReadOnly)
+  GadgetFrame3D_1 = Frame3DGadget(#PB_Any, 10, 190, 780, 250, "Game Information")
   GadgetFrame3D_2 = Frame3DGadget(#PB_Any, 10, 10, 780, 170, "Game Control")
   GadgetTextBullets = TextGadget(#PB_Any, 190, 35, 150, 20, "Number of Bullets:", #PB_Text_Right)
-  GadgetTextBulletsLeft = TextGadget(#PB_Any, 20, 240, 150, 20, "Bullets left:", #PB_Text_Right)
+  GadgetTextBulletsLeft = TextGadget(#PB_Any, 70, 220, 150, 30, "Bullets left", #PB_Text_Center)
+  SetGadgetFont(GadgetTextBulletsLeft, FontID(#Font_1))
   GadgetTextLevel = TextGadget(#PB_Any, 590, 35, 80, 20, "Difficulty:", #PB_Text_Right)
   GadgetTextTarget01 = TextGadget(#PB_Any, 220, 90, 120, 20, "Target Mote #1", #PB_Text_Center)
   GadgetTextT1Open = TextGadget(#PB_Any, 220, 120, 80, 20, "Opened:", #PB_Text_Right)
   GadgetSpinBullets = SpinGadget(#PB_Any, 360, 30, 60, 30, 1, 127, #PB_Spin_Numeric)
   DisableGadget(GadgetSpinBullets, 1)
-  GadgetProgressBarBullets = ProgressBarGadget(#PB_Any, 180, 240, 200, 20, 0, 0, #PB_ProgressBar_Smooth)
+  GadgetProgressBarBullets = ProgressBarGadget(#PB_Any, 20, 250, 250, 30, 0, 0, #PB_ProgressBar_Smooth)
   GadgetComboDifficulty = ComboBoxGadget(#PB_Any, 680, 30, 100, 30)
   DisableGadget(GadgetComboDifficulty, 1)
   GadgetFrame3DDifficulty = Frame3DGadget(#PB_Any, 203, 70, 577, 100, "Custom Difficulty Settings")
@@ -38,8 +41,9 @@ Procedure OpenWindowMain()
   GadgetTextT1Close = TextGadget(#PB_Any, 220, 140, 80, 20, "Closed:", #PB_Text_Right)
   GadgetTextT2Close = TextGadget(#PB_Any, 420, 140, 80, 20, "Closed:", #PB_Text_Right)
   GadgetTextT3Close = TextGadget(#PB_Any, 620, 140, 80, 20, "Closed:", #PB_Text_Right)
-  GadgetProgressBarTime = ProgressBarGadget(#PB_Any, 180, 270, 200, 20, 0, 0, #PB_ProgressBar_Smooth)
-  GadgetTextTimeLeft = TextGadget(#PB_Any, 20, 270, 150, 20, "Time left:", #PB_Text_Right)
+  GadgetProgressBarTime = ProgressBarGadget(#PB_Any, 530, 250, 250, 30, 0, 0, #PB_ProgressBar_Smooth)
+  GadgetTextTimeLeft = TextGadget(#PB_Any, 580, 220, 150, 30, "Time left", #PB_Text_Center)
+  SetGadgetFont(GadgetTextTimeLeft, FontID(#Font_1))
   GadgetStringT1Open = StringGadget(#PB_Any, 300, 120, 40, 20, "5", #PB_String_Numeric)
   GadgetToolTip(GadgetStringT1Open, "The duration in seconds for which the target stays open")
   DisableGadget(GadgetStringT1Open, 1)
@@ -66,6 +70,8 @@ Procedure OpenWindowMain()
   GadgetButtonRegisterT3 = ButtonGadget(#PB_Any, 750, 90, 20, 20, "*")
   GadgetSpinTime = SpinGadget(#PB_Any, 510, 30, 60, 30, 1, 600, #PB_Spin_Numeric)
   DisableGadget(GadgetSpinTime, 1)
+  GadgetTextHit = TextGadget(#PB_Any, 275, 290, 245, 30, "Hit counter", #PB_Text_Center)
+  SetGadgetFont(GadgetTextHit, FontID(#Font_1))
 EndProcedure
 
 Procedure WindowMain_Events(event)
