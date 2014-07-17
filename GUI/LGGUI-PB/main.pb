@@ -48,6 +48,7 @@ Declare sflistenHandleOutput(Output$)
 Declare startGame()
 Declare stopGame()
 Declare toggleGame()
+Declare evaluateGame()
 
 Procedure addLog(logEntry$)
   Debug logEntry$
@@ -99,10 +100,13 @@ Procedure updateProgressBar() ; update graphical interface for remaining bullets
   SetGadgetState(GadgetProgressBarBullets, BulletsMax-BulletsShot)
   
   If GameRunning
-     TimeLeft = TimeMax - (Date() - TimeStart)
+    TimeLeft = TimeMax - (Date() - TimeStart)
     SetGadgetAttribute(GadgetProgressBarTime, #PB_ProgressBar_Minimum, 0)
     SetGadgetAttribute(GadgetProgressBarTime, #PB_ProgressBar_Maximum, TimeMax)
     SetGadgetState(GadgetProgressBarTime, TimeLeft)
+    If TimeLeft <= 0
+      evaluateGame()
+    EndIf
   Else
     SetGadgetState(GadgetProgressBarTime, 0)
   EndIf
@@ -216,7 +220,7 @@ Procedure sflistenHandleOutput(Output$)
           addLog("gunmote released " + Str(BulletsShot) + "/" + Str(BulletsMax) + " bullets")
           If BulletsShot >= BulletsMax 
             BulletsShot = BulletsMax
-            stopGame()
+            evaluateGame()
           EndIf
         EndIf
         
@@ -229,6 +233,21 @@ Procedure sflistenHandleOutput(Output$)
           PlaySound(sound)
         EndIf
         addLog("hit registered from mote "+Str(moteID))
+        With Hits
+          Select moteID
+            Case 1
+              \MoteT1 = \MoteT1 + 1
+            Case 2
+              \MoteT2 = \MoteT2 + 1
+            Case 3
+              \MoteT3 = \MoteT3 + 1
+          EndSelect
+          SetGadgetText(GadgetTextHits1, Str(\MoteT1))
+          SetGadgetText(GadgetTextHits2, Str(\MoteT2))
+          SetGadgetText(GadgetTextHits3, Str(\MoteT3))
+          SetGadgetText(GadgetTextHits, Str(\MoteT1+\MoteT2+\MoteT3))
+        EndWith
+          
         
       Case 5 ; Feedback for ID assignment
         addLog("sflisten: received feedback from moteID "+Str(moteID))
@@ -271,10 +290,20 @@ Procedure startGame()
   
   sfsendBullets(Val(GetGadgetText(GadgetSpinBullets)))
   
-  
-  GameRunning = #True
+  SetGadgetText(GadgetTextHits1, "0")
+  SetGadgetText(GadgetTextHits2, "0")
+  SetGadgetText(GadgetTextHits3, "0")
+  SetGadgetText(GadgetTextHits, "0")
+  SetGadgetText(GadgetTextAccuracy, "--")
+    SetGadgetText(GadgetTextWinLose, "")
+  With Hits
+    \MoteT1 = 0
+    \MoteT2 = 0
+    \MoteT3 = 0
+  EndWith
   TimeStart = Date()
   TimeMax = GetGadgetState(GadgetSpinTime)
+  GameRunning = #True
   ProcedureReturn #True
 EndProcedure
 
@@ -290,6 +319,32 @@ Procedure stopGame()
   GameRunning = #False
   ProcedureReturn #True
 EndProcedure
+
+Procedure evaluateGame()
+  Protected accuracy = 0
+  If BulletsShot
+    accuracy = (100*(Hits\MoteT1+Hits\MoteT2+Hits\MoteT3)/BulletsShot)
+  EndIf
+  If accuracy < 0
+    SetGadgetText(GadgetTextWinLose, "Do you even try?!")
+  ElseIf accuracy < 10
+    SetGadgetText(GadgetTextWinLose, "Oh come on!")
+  ElseIf accuracy < 20
+    SetGadgetText(GadgetTextWinLose, "Better luck next time!")
+  ElseIf accuracy < 30
+    SetGadgetText(GadgetTextWinLose, "Not bad!")
+  ElseIf accuracy < 40
+    SetGadgetText(GadgetTextWinLose, "You are on a good way!")
+  ElseIf accuracy < 50
+    SetGadgetText(GadgetTextWinLose, "Nearly 50%!")
+  ElseIf accuracy < 60
+    SetGadgetText(GadgetTextWinLose, "I'm impressed!")
+  Else
+    SetGadgetText(GadgetTextWinLose, "Amazing!")
+  EndIf
+  stopGame()
+EndProcedure
+
 
 Procedure toggleGame()
   If GameRunning
@@ -401,6 +456,11 @@ Repeat ; main loop
       ;{ Gadgets
       updateProgressBar()
       
+      If BulletsShot And GameRunning
+        SetGadgetText(GadgetTextAccuracy, Str(100*(Hits\MoteT1+Hits\MoteT2+Hits\MoteT3)/BulletsShot) + "%")
+      EndIf
+      
+      
       Define Last.TargetMotes
       
       If Not Motes\MoteT1 = Last\MoteT1
@@ -484,10 +544,10 @@ Repeat ; main loop
   ;} 
   
 ForEver
-; IDE Options = PureBasic 5.11 (Linux - x64)
-; CursorPosition = 72
-; FirstLine = 51
-; Folding = HA5-
+; IDE Options = PureBasic 5.11 (Linux - x86)
+; CursorPosition = 297
+; FirstLine = 83
+; Folding = IQz-
 ; EnableThread
 ; EnableXP
 ; Executable = LGGUI

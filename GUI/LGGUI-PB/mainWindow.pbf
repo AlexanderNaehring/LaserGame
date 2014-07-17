@@ -3,7 +3,7 @@
 
 Global WindowMain
 
-Global GadgetButtonToggleGame, GadgetEditorLog, GadgetFrame3D_1, GadgetFrame3D_2, GadgetTextBullets, GadgetTextBulletsLeft, GadgetTextLevel, GadgetTextTarget01, GadgetTextT1Open, GadgetSpinBullets, GadgetProgressBarBullets, GadgetComboDifficulty, GadgetFrame3DDifficulty, GadgetTextTarget02, GadgetTextTarget03, GadgetTextT2Open, GadgetTextT3Open, GadgetTextT1Close, GadgetTextT2Close, GadgetTextT3Close, GadgetProgressBarTime, GadgetTextTimeLeft, GadgetStringT1Open, GadgetStringT2Open, GadgetStringT3Open, GadgetStringT1Close, GadgetStringT2Close, GadgetStringT3Close, GadgetButtonRegisterT, GadgetTextTime, GadgetButtonRegisterT1, GadgetButtonRegisterT2, GadgetButtonRegisterT3, GadgetSpinTime, GadgetTextHit
+Global GadgetButtonToggleGame, GadgetEditorLog, GadgetFrame3D_1, GadgetFrame3D_2, GadgetTextBullets, GadgetTextBulletsLeft, GadgetTextLevel, GadgetTextTarget01, GadgetTextT1Open, GadgetSpinBullets, GadgetProgressBarBullets, GadgetComboDifficulty, GadgetFrame3DDifficulty, GadgetTextTarget02, GadgetTextTarget03, GadgetTextT2Open, GadgetTextT3Open, GadgetTextT1Close, GadgetTextT2Close, GadgetTextT3Close, GadgetProgressBarTime, GadgetTextTimeLeft, GadgetStringT1Open, GadgetStringT2Open, GadgetStringT3Open, GadgetStringT1Close, GadgetStringT2Close, GadgetStringT3Close, GadgetButtonRegisterT, GadgetTextTime, GadgetButtonRegisterT1, GadgetButtonRegisterT2, GadgetButtonRegisterT3, GadgetSpinTime, GadgetTextHit, GadgetTextHits, GadgetTextHit, GadgetTextHits1, GadgetTextHits2, GadgetTextHits3, Accuracy, GadgetTextAccuracy, GadgetTextWinLose
 
 Enumeration #PB_Compiler_EnumerationValue
   #Font_0
@@ -70,8 +70,20 @@ Procedure OpenWindowMain()
   GadgetButtonRegisterT3 = ButtonGadget(#PB_Any, 750, 90, 20, 20, "*")
   GadgetSpinTime = SpinGadget(#PB_Any, 510, 30, 60, 30, 1, 600, #PB_Spin_Numeric)
   DisableGadget(GadgetSpinTime, 1)
-  GadgetTextHit = TextGadget(#PB_Any, 275, 290, 245, 30, "Hit counter", #PB_Text_Center)
+  GadgetTextHit = TextGadget(#PB_Any, 275, 210, 245, 30, "Hit counter", #PB_Text_Center)
+  SetGadgetFont(GadgetTextHit, FontID(#Font_0))
+  GadgetTextHits = TextGadget(#PB_Any, 350, 245, 100, 80, "0", #PB_Text_Center)
+  SetGadgetFont(GadgetTextHits, FontID(#Font_0))
+  GadgetTextHit = TextGadget(#PB_Any, 75, 290, 145, 30, "Target Hits", #PB_Text_Center)
   SetGadgetFont(GadgetTextHit, FontID(#Font_1))
+  GadgetTextHits1 = TextGadget(#PB_Any, 70, 325, 30, 30, "0", #PB_Text_Center | #PB_Text_Border)
+  GadgetTextHits2 = TextGadget(#PB_Any, 130, 325, 30, 30, "0", #PB_Text_Center | #PB_Text_Border)
+  GadgetTextHits3 = TextGadget(#PB_Any, 190, 325, 30, 30, "0", #PB_Text_Center | #PB_Text_Border)
+  Accuracy = TextGadget(#PB_Any, 585, 290, 145, 30, "Accuracy", #PB_Text_Center)
+  SetGadgetFont(Accuracy, FontID(#Font_1))
+  GadgetTextAccuracy = TextGadget(#PB_Any, 635, 325, 40, 30, "0", #PB_Text_Center | #PB_Text_Border)
+  GadgetTextWinLose = TextGadget(#PB_Any, 275, 370, 245, 30, "", #PB_Text_Center)
+  SetGadgetFont(GadgetTextWinLose, FontID(#Font_0))
 EndProcedure
 
 Procedure WindowMain_Events(event)
