@@ -91,7 +91,7 @@ implementation  {
               busy = TRUE;
               call Leds.led0Off();
             }
-          }
+          } // endif busy (sending)
         }
       }
     }
@@ -111,7 +111,7 @@ implementation  {
 // It's a hit or not
   event void LightRead.readDone(error_t result, uint16_t val)  {
     if(result == SUCCESS) {
-      if(val >= 200 ) {       // Yeah, it is a hit!
+      if(val >= 800 && servoPosition == 1) {       // Light over threshold and target open
         hit_counter++;
         call LightTimer.startOneShot(750); // if there is a hit, wait a little bit longer
         //sending this hit
